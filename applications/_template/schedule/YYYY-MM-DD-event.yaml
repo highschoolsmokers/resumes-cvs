@@ -1,0 +1,58 @@
+# schedule/<YYYY-MM-DD>-<event>.yaml — per spec §§6.8, 9.7.
+#
+# Audit trail for a single scheduling round. Google Calendar is the
+# source of truth for the actual holds; this file records what the
+# scheduler proposed, why, and (once promoted) which slot won.
+#
+# Written by agents/scheduler.md. Read by the user to verify the parse
+# before confirming.
+
+company: "<Company>"
+role: "<Role title as in tracker.yaml>"
+stage: "<one of config/voice.yaml → scheduling_preferences.known_stages; default 'Screen'>"
+
+# The recruiter thread this round belongs to.
+thread_message_id: "<original recruiter Message-Id>"
+thread_link: "message://<URL-encoded Message-Id>"
+recruiter_email: "<recruiter@company.com>"
+
+timezone: "America/Los_Angeles"
+
+# Verbatim quotes from the recruiter's email that carry slot info. The
+# user uses these to verify the parse. Never paraphrase.
+source_phrases:
+  - "<verbatim slot-bearing sentence from the recruiter's email>"
+
+# Every distinct time the recruiter offered, parsed to ISO-8601 in the
+# recruiter's timezone (or ours, when unspecified and both parties are PT).
+parsed_slots:
+  - start: "YYYY-MM-DDTHH:MM-07:00"
+    end:   "YYYY-MM-DDTHH:MM-07:00"
+    source_phrase_index: 0
+
+# Calendar conflicts against parsed_slots, detected via the Google
+# Calendar MCP. Buffer violations count as conflicts.
+conflicts: []
+  # - slot_index: 0
+  #   conflicting_event: "<title of the blocking event — time range>"
+
+# Up to 3 conflict-free slots, ranked. Each has a corresponding
+# [TENTATIVE] Google Calendar event; preserve tentative_event_id so the
+# promotion flow can rename the winner and delete the losers.
+candidate_slots:
+  - start: "YYYY-MM-DDTHH:MM-07:00"
+    end:   "YYYY-MM-DDTHH:MM-07:00"
+    rank_reason: "<why this slot was ranked first — e.g. 'matches recruiter's first option; in preferred 10:00-12:00 block'>"
+    tentative_event_id: "<google-calendar-event-id>"
+
+# Calendly handling — if present, we capture the link and punt; never
+# auto-book. If no Calendly in the thread, both fields stay null.
+calendly:
+  link: null
+  note: null
+
+# Flipped true only by the promotion flow after the user says
+# "confirmed <slot>". Until then, every calendar event created by this
+# round still has the [TENTATIVE] prefix.
+confirmed: false
+confirmed_slot_index: null

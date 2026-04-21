@@ -1,0 +1,55 @@
+# tracker.yaml — the source of truth for one application's lifecycle.
+# Schema per job-search-agent-spec.md §6.2. Keep this file terse; longer
+# context goes in notes.md alongside the Mail.app message:// deep-links.
+#
+# Phase 4 (tracker-agent) will sweep every open tracker every 2h and
+# promote status based on matched Apple Mail messages. Until Phase 4
+# lands, the user maintains this file manually.
+
+company: "<Company>"
+role: "<Role Title>"
+listing_url: "<https://…>"
+applied_via: "<greenhouse | lever | ashby | linkedin | company | referral>"
+applied_on: null                        # YYYY-MM-DD when you actually submit
+referrer: null                          # name, or null
+portal_url: null                        # where to log in to check status
+contact:
+  recruiter: null                       # "Name <email>"
+  hiring_manager: null
+
+# One of: applied | screened | interviewing | offer | rejected | withdrawn | ghosted
+# The tracker-agent only ever PROMOTES status. Demotions require the user's
+# confirmation (see spec §6.3 step 2).
+status: applied
+
+status_history:
+  - at: null                            # ISO-8601 with tz, e.g. 2026-04-18T14:02-07:00
+    status: applied
+    source: manual                      # manual | apple-mail | user-confirmed
+
+next_action: "<what to do next and by when>"
+
+# Domains sweep.py uses to match incoming Mail.app messages to this
+# application. listing.json → company_domain is the seed; add recruiter
+# ATS domains (greenhouse-mail.io, hire.lever.co, ashbyhq.com, etc.) as
+# they show up. The tracker-agent proposes additions when a new domain
+# appears — never adds them silently.
+company_domains:
+  - "<company.com>"
+
+# ISO-8601 timestamp of the most recent sweep that touched this tracker.
+# Written by scripts/sweep.py; lets later sweeps narrow their Mail.app
+# query window.
+last_checked_at: null
+
+# RFC-822 Message-Id values captured from Apple Mail. The tracker sweep
+# dedupes on this list — don't clear it by hand unless you know what
+# you're doing.
+mail_message_ids: []
+
+# iCloud Mail nested mailbox. Created by the tracker-agent on first match.
+# Renamed to "JobSearch-Archive/<Company>" by the archiver when the
+# application closes (spec §7).
+mailbox: "JobSearch/<Company>"
+
+notes_ref: notes.md

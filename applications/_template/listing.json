@@ -1,0 +1,23 @@
+{
+  "_comment": "Normalised listing schema per job-search-agent-spec.md §3.4. In the normal path scripts/url_ingest.py produces this file — fill in by hand only when all adapter strategies have failed.",
+  "id": "<adapter>:<company-slug>:<job-id>",
+  "source": "<greenhouse-aggregate | lever-aggregate | ashby-aggregate | linkedin | manual>",
+  "source_url": "<https://…>",
+  "company": "<Company>",
+  "title": "<Role Title>",
+  "location": "<City, ST or 'Remote'>",
+  "remote": "<onsite | hybrid | remote | unknown>",
+  "seniority": "<junior | mid | senior | staff | principal | unknown>",
+  "posted_at": "YYYY-MM-DD",
+  "comp": {
+    "min": null,
+    "max": null,
+    "currency": "USD",
+    "equity": null
+  },
+  "description_md": "<full JD, markdown-converted>",
+  "requirements": [],
+  "tech_mentions": [],
+  "fetched_at": "YYYY-MM-DDTHH:MM:SS-07:00",
+  "ingest": "manual"
+}

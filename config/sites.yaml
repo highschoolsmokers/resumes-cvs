@@ -1,0 +1,58 @@
+# Source adapters for the search agent.
+# Each entry is independent — one broken adapter should not fail the whole run (see run.py).
+# Token values are the board slug in the provider's URL, not an API key.
+#
+# Add a company: drop a slug into the right source's `tokens` list and rerun.
+# Remove: delete or comment out.
+# Phase 1 excludes LinkedIn (needs Chrome MCP; brittle). Added in Phase 2+.
+
+- name: greenhouse
+  strategy: api
+  endpoint_template: "https://boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true"
+  tokens:
+    - anthropic
+    - vercel
+    - stripe
+    - openai
+    - figma
+    - notion
+    - linear
+    - supabase
+    - discord
+    - airtable
+    - retool
+    - cloudflare
+    - hashicorp
+  rate_limit_sec: 1
+
+- name: lever
+  strategy: api
+  endpoint_template: "https://api.lever.co/v0/postings/{token}?mode=json"
+  tokens:
+    - mistral
+    - netflix
+    - palantir
+    - plaid
+    - ramp
+  rate_limit_sec: 1
+
+- name: ashby
+  strategy: api
+  endpoint_template: "https://api.ashbyhq.com/posting-api/job-board/{token}?includeCompensation=true"
+  tokens:
+    - langchain
+    - modal
+    - braintrust
+    - perplexity
+    - replicate
+  rate_limit_sec: 1
+
+# HN "Who is hiring?" — deferred to Phase 1.5. Parser needs a bit more work
+# (find this month's thread id, walk the reply tree via Firebase API, classify
+# each comment as a listing-or-not). Keeping as a commented stub so it's
+# discoverable.
+#
+# - name: hn-whos-hiring
+#   strategy: web-fetch
+#   url: "https://hn.algolia.com/api/v1/search_by_date?tags=story,author_whoishiring&query=hiring"
+#   parser: hn-monthly-thread

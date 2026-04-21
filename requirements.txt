@@ -1,0 +1,17 @@
+# Phase 1 + Phase 2 + Phase 4 deps. Pinned minors; bump as needed.
+
+# Phase 1 — search adapters and the fit-scorer driver
+requests>=2.31,<3
+PyYAML>=6.0,<7
+
+# Phase 2 — resume tailoring
+python-docx>=1.1,<2          # read existing resumes for bullet extraction + backprop
+lxml>=5,<6                   # OOXML pretty-print inside build_resume.py
+pypdf>=4,<5                  # scripts/merge_pdfs.py
+
+# Phase 4 — tracker / scheduler
+python-dateutil>=2.8,<3      # scheduler time-parsing from recruiter prose
+
+# System (not pip-installable, noted here for the install doc):
+#   brew install --cask libreoffice       # scripts/docx_to_pdf.py
+#   brew install gh                       # pre-commit + PR utilities

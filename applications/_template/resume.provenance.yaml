@@ -1,0 +1,27 @@
+# resume.provenance.yaml — one entry per sentence on the rendered resume.
+# Schema per job-search-agent-spec.md §8.8.
+#
+# Every `source:` value must resolve inside the closed universe:
+#   bullet:<id>      -> bullets.yaml -> bullets[*].id
+#   summary:<id>     -> bullets.yaml -> summaries[*].id
+#   skill:<id>       -> bullets.yaml -> skills_menu[*].id
+#   education:<id>   -> bullets.yaml -> education[*].id
+#   template:<key>   -> resume-template.docx fixed text (name, contact info, etc.)
+#
+# unsourced_claims MUST be an empty list. If it isn't, the pre-commit hook
+# (scripts/check_provenance.py) blocks the commit. If you're about to emit
+# a sentence you can't cite, follow the Refusal protocol in agents/resume-tailor.md.
+
+artifact: resume.docx
+generated_at: "YYYY-MM-DDTHH:MM:SS-07:00"
+generator: "build_resume.py + resume-tailor agent"
+
+claims:
+  - claim: "<verbatim sentence or bullet text from resume.docx>"
+    source: "bullet:<bullet-id>"
+  - claim: "<verbatim summary paragraph>"
+    source: "summary:<summary-id>"
+  - claim: "<skill group label + content>"
+    source: "skill:<skill-group-id>"
+
+unsourced_claims: []
