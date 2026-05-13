@@ -179,6 +179,30 @@ def render(trackers: list[tuple[Path, dict[str, Any]]]) -> str:
     return "\n".join(lines)
 
 
+def _queue_section() -> str:
+    """Run scripts/queue_status.py and capture its markdown; empty if unavailable."""
+    import subprocess
+    queue_status = REPO / "scripts" / "queue_status.py"
+    if not queue_status.exists():
+        return ""
+    try:
+        r = subprocess.run([sys.executable, str(queue_status)],
+                           capture_output=True, text=True, cwd=str(REPO))
+        if r.returncode == 0 and r.stdout.strip():
+            return "\n" + r.stdout.rstrip() + "\n"
+    except (FileNotFoundError, OSError):
+        pass
+    return ""
+
+
+def _bullet_leaderboard_section() -> str:
+    """Inline the leaderboard markdown if scripts/bullet_outcomes.py has produced it."""
+    leaderboard = REPO / "state" / "bullet_outcomes.md"
+    if leaderboard.exists():
+        return "\n" + leaderboard.read_text().rstrip() + "\n"
+    return ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -188,6 +212,8 @@ def main() -> int:
 
     trackers = collect_trackers()
     md = render(trackers)
+    md += _queue_section()
+    md += _bullet_leaderboard_section()
     args.out.write_text(md)
     print(f"dashboard.py: wrote {len(trackers)} tracker(s) → {args.out.relative_to(REPO) if args.out.is_absolute() and args.out.is_relative_to(REPO) else args.out}")
     return 0

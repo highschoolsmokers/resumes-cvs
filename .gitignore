@@ -90,6 +90,12 @@ applications/_plans/
 # (scripts/build_index.py, scripts/bullet_outcomes.py write here)
 state/
 
+# Apply queue — pending URLs the user is going after; history; failures
+queue.jsonl
+queue.history.jsonl
+queue.failed.jsonl
+.queue.lock
+
 # Generated generalized resume artifacts (filename includes your name)
 *-generalized.docx
 *-generalized.pdf
