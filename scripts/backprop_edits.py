@@ -1,34 +1,34 @@
 #!/usr/bin/env python3
-"""Back-propagate user edits on a tailored resume into `bullets.yaml`.
+"""Detect bullets that may have been hand-edited on a tailored resume.
 
-Problem this solves: the user tailors a resume, then hand-edits the generated
-`resume.docx` — sharpening a bullet, fixing a typo, tightening phrasing. Next
-time the tailor runs, those edits would be lost because the source of truth
-is `bullets.yaml`, not the tailored docx.
+CURRENT STATUS (detection only):
+    This script identifies bullet IDs whose `bullets.yaml` text does NOT
+    appear verbatim in the tailored `resume.docx`. It surfaces those as
+    candidates the user should review. It does **not** rewrite
+    `bullets.yaml` — preserving the file's schema-documenting comments
+    through programmatic YAML round-trips is non-trivial, and we'd rather
+    print proposals than silently corrupt the closed universe.
 
-Solution: after an application ships (or at user request), diff the bullets
-that appear in the tailored `resume.docx` against the `bullets.yaml` entries
-they came from. For each diverged bullet, *prompt the user* to decide what to
-do:
+    The interactive `[u]pdate` / `[n]ew-id` prompt collects choices but
+    `save_bullets()` is currently a stub that prints the proposals and
+    tells the user to apply them by hand. Implementing the in-place
+    rewrite (likely via ruamel.yaml or string surgery on the YAML body)
+    is a follow-up.
 
-    [u] update bullets.yaml in place (overwrites the old text; fix is global)
-    [n] create a new bullet ID with the edited text (preserves both variants)
-    [s] skip this one (you intend to diverge just this once)
-    [q] quit
+Problem the full feature solves: the user tailors a resume, then hand-edits
+the generated `resume.docx` — sharpening a bullet, fixing a typo, tightening
+phrasing. Next time the tailor runs, those edits would be lost because the
+source of truth is `bullets.yaml`, not the tailored docx.
 
-Critical invariants:
-    - NEVER auto-modify bullets.yaml. Every change goes through a y/n prompt.
-    - When the user picks [n], the new ID must not already exist.
-    - We read from the `resume.unpacked/` sibling, not the .docx, so we can
-      regex-extract bullet text cleanly.
-
-We identify which bullet in bullets.yaml corresponds to which rendered text
-by looking at `resume.provenance.yaml` — every claim in the sidecar says
-what source ID it came from, so the mapping is explicit.
+Mapping rendered text back to bullet IDs uses `resume.provenance.yaml` —
+every claim in the sidecar names its source ID, so the mapping is explicit.
 
 Usage:
     python scripts/backprop_edits.py applications/Anthropic/fde-2026-04-20/
     python scripts/backprop_edits.py --dry-run applications/Anthropic/fde-2026-04-20/
+
+Both modes today produce the same output: a list of suspect bullet IDs and
+the original text. `--dry-run` skips the interactive prompt loop.
 """
 from __future__ import annotations
 
@@ -54,18 +54,20 @@ def load_bullets() -> dict:
         return yaml.safe_load(f)
 
 
-def save_bullets(data: dict) -> None:
-    # Preserve the header comment block by only touching the data portion.
-    # We read the original raw text, splice the new YAML in as a replacement
-    # of the YAML body, and rewrite.
-    #
-    # Simple approach: dump with default_flow_style=False and sort_keys=False
-    # into a temp buffer. The file already lives with schema-documenting
-    # comments — dumping via yaml.safe_dump drops them. To keep comments,
-    # we instead rewrite only the `bullets:` section via string surgery.
+def save_bullets(data: dict) -> None:  # noqa: ARG001
+    """Placeholder — see module docstring.
+
+    Implementing in-place rewrite of bullets.yaml requires preserving the
+    file's schema-documenting comments, which `yaml.safe_dump` drops. A real
+    implementation would either:
+      (a) switch to ruamel.yaml round-trip mode, or
+      (b) do targeted string surgery on the `bullets:` block.
+
+    Until that lands, the user applies the proposed edits by hand.
+    """
     sys.stderr.write(
-        "backprop_edits.py: direct in-place bullets.yaml rewrite not implemented.\n"
-        "  Proposed edits are printed above; apply them by hand to preserve comments.\n"
+        "backprop_edits.py: in-place bullets.yaml rewrite is not implemented.\n"
+        "  Apply the proposed edits above by hand to preserve comments.\n"
     )
 
 
@@ -207,13 +209,14 @@ def main() -> int:
     if args.dry_run:
         return 0
 
-    # Interactive prompt loop — NEVER writes to bullets.yaml silently.
+    # Until the in-place save is implemented, the interactive loop only
+    # confirms intent and emits the proposed edits — the user applies them.
     approved: list[dict] = []
     for p in proposals:
         print(f"\nBullet: {p['bullet_id']}")
         print(f"  original: {p['original']}")
         print(f"  edited:   {p['edited']}")
-        choice = prompt("Update [u], new-id [n], skip [s], quit [q]?", "unsq")
+        choice = prompt("Mark for update [u], new-id [n], skip [s], quit [q]?", "unsq")
         if choice == "q":
             break
         if choice == "s":
@@ -225,14 +228,14 @@ def main() -> int:
             approved.append({**p, "action": "new", "new_id": new_id})
 
     if not approved:
-        print("No changes requested. Done.")
+        print("No changes marked. Done.")
         return 0
 
-    print("\nApproved changes:")
+    print("\nMarked for edit:")
     for a in approved:
         print(f"  - {a}")
 
-    save_bullets({})  # currently warns: apply by hand to preserve comments
+    save_bullets({})  # stub — prints "apply by hand"; see module docstring.
     return 0
 
 
