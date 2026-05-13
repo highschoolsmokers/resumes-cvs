@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render `cover-letter.md` → `cover-letter.docx` with the Your Name letterhead.
+"""Render `cover-letter.md` → `cover-letter.docx` with the W.S. Gong letterhead.
 
 The docx output then goes through `scripts/docx_to_pdf.py` to produce the
 PDF the user attaches to applications. Typography mirrors the resume's
@@ -15,7 +15,7 @@ Input markdown format (produced by agents/cover-letter-writer.md):
 
     <Close paragraph>
 
-    Your Name
+    W.S. Gong
 
 Blank lines separate paragraphs. The first non-empty line is treated as
 the salutation; the last non-empty line is treated as the signature.
@@ -229,7 +229,7 @@ def _letterhead(doc, contact: dict) -> None:
     name_para = doc.add_paragraph()
     name_para.paragraph_format.space_before = Pt(0)
     name_para.paragraph_format.space_after = Pt(0)
-    name_run = name_para.add_run(contact.get("name", "Your Name"))
+    name_run = name_para.add_run(contact.get("name", "W.S. Gong"))
     _set_run_font(name_run, DISPLAY_FONT, 26, ACCENT, bold=True)
 
     # Subhead: smaller Raleway, muted.
@@ -242,9 +242,9 @@ def _letterhead(doc, contact: dict) -> None:
     # Contact line: one paragraph, Lato small, muted.
     parts = contact.get("contact_line", [
         "San Francisco, CA",
-        "you@example.com",
-        "yourdomain.com",
-        "github.com/your-handle",
+        "billygong@me.com",
+        "ws-gong.com",
+        "github.com/highschoolsmokers",
     ])
     contact_para = doc.add_paragraph()
     contact_para.paragraph_format.space_before = Pt(0)

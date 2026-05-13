@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Your Name's resume from the Swiss template.
+"""Build W.S. Gong's resume from the Swiss template.
 
 Modes:
     python build_resume.py                     → regenerate the generalized resume
@@ -47,9 +47,9 @@ except ImportError:  # pragma: no cover
 
 
 REPO = Path(__file__).resolve().parent
-TEMPLATE = REPO / 'resume-template.docx'
+TEMPLATE = REPO / 'WSGong_Resume_Template.docx'
 BULLETS_YAML = REPO / 'bullets.yaml'
-DEFAULT_OUT = REPO / 'YYYY-MM-DD-your-resume-generalized.docx'
+DEFAULT_OUT = REPO / '2026-04-17-wsgong-resume-generalized.docx'
 
 
 # -----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ def generalized_plan(bullets: dict[str, Any]) -> dict[str, Any]:
         'summary_text': (
             "Twenty-five years in software QA and developer platforms, retooled through an MFA "
             "and a working editorial practice. Operates at the intersection of language and "
-            "systems — docs-as-tests, agentic workflows, technical prose for non-expert "
+            "systems: docs-as-tests, agentic workflows, technical prose for non-expert "
             "audiences, literary editing applied to API references. Currently Fiction Editor "
             "at The Rumpus under Roxane Gay, with an independent contract practice building "
             "MCP servers, Claude Code plugins, and multi-agent web applications."
@@ -277,16 +277,29 @@ def para_body(text: str, before: int = 120) -> str:
 '''
 
 
-def para_label_value(label: str, value: str, before: int = 120) -> str:
+def para_label_then_value(label: str, value: str, before: int = 120) -> str:
+    """Render label and value as two stacked paragraphs — bold label on its
+    own line, plain value on the next. Used in Publications & Activity /
+    Community lists where a dash-continued single line was too dense.
+
+    `before` governs the gap ABOVE the label (separation from the previous
+    item). The value paragraph sits tight under the label with before=0.
+    """
     return f'''          <w:p>
             <w:pPr>
               <w:spacing w:before="{before}" w:line="240" w:lineRule="auto"/>
-              <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>
+              <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:b w:val="1"/><w:bCs w:val="1"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>
             </w:pPr>
             <w:r>
               <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:b w:val="1"/><w:bCs w:val="1"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:rtl w:val="0"/></w:rPr>
-              <w:t xml:space="preserve">{label} — </w:t>
+              <w:t xml:space="preserve">{label}</w:t>
             </w:r>
+          </w:p>
+          <w:p>
+            <w:pPr>
+              <w:spacing w:before="0" w:line="240" w:lineRule="auto"/>
+              <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>
+            </w:pPr>
             <w:r>
               <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:rtl w:val="0"/></w:rPr>
               <w:t xml:space="preserve">{value}</w:t>
@@ -307,7 +320,7 @@ def para_project(name: str, tech: str, desc: str, before: int = 120) -> str:
             </w:r>
             <w:r>
               <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:color w:val="666666"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:rtl w:val="0"/></w:rPr>
-              <w:t xml:space="preserve">({tech}) — {desc}</w:t>
+              <w:t xml:space="preserve">({tech}): {desc}</w:t>
             </w:r>
           </w:p>
 '''
@@ -461,10 +474,12 @@ def build_summary_xml(plan: dict, bullets: dict) -> str:
 
 
 def build_skills_inner(plan: dict, bullets: dict) -> str:
+    """Render Skills as label/value stacks — group label on its own line
+    (bold), skill list on the next. Matches publications/community styling."""
     chunks: list[str] = []
     for i, key in enumerate(plan['skill_order']):
         entry = bullets['_skills_by_id'][key]
-        chunks.append(para_label_value(
+        chunks.append(para_label_then_value(
             xml_escape(entry['label']),
             xml_escape(entry['content']),
             before=0 if i == 0 else 240,
@@ -517,7 +532,7 @@ def build_experience_entries(plan: dict, bullets: dict) -> list[tuple]:
 
         start = role.get('start', '')
         end = role.get('end', '')
-        date_line = f"{start} — {end}".upper() if start or end else ""
+        date_line = f"{start}–{end}".upper() if start or end else ""
         loc_line = (role.get('location') or '').upper()
         company = xml_escape(role.get('employer', ''))
         title_alts = role.get('title_alternates') or {}
@@ -537,7 +552,7 @@ def build_experience_entries(plan: dict, bullets: dict) -> list[tuple]:
 def _education_entries_static(bullets: dict) -> list[tuple]:
     out: list[tuple] = []
     for edu in bullets.get('education', []):
-        date_line = f"{edu.get('start', '')} — {edu.get('end', '')}".upper().strip(' —')
+        date_line = f"{edu.get('start', '')}–{edu.get('end', '')}".upper().strip(' –')
         if edu.get('start') == edu.get('end'):
             date_line = (edu.get('start') or '').upper()
         loc_line = (edu.get('location') or '').upper()
@@ -551,7 +566,9 @@ def _education_entries_static(bullets: dict) -> list[tuple]:
 
 
 def build_publications_inner(bullets: dict) -> str:
-    """Simple list of <label> — <value> items from publications_activity."""
+    """Render publications_activity as label/value stacks — label on its own
+    line (bold), value on the next. Replaces the prior single-line
+    "<label> — <value>" layout."""
     items = bullets.get('publications_activity', [])
     chunks: list[str] = []
     for i, item in enumerate(items):
@@ -559,7 +576,7 @@ def build_publications_inner(bullets: dict) -> str:
             label, value = item.split(' — ', 1)
         else:
             label, value = item, ''
-        chunks.append(para_label_value(
+        chunks.append(para_label_then_value(
             xml_escape(label),
             xml_escape(value),
             before=0 if i == 0 else 240,
@@ -568,6 +585,8 @@ def build_publications_inner(bullets: dict) -> str:
 
 
 def build_community_inner(bullets: dict) -> str:
+    """Render community as label/value stacks — label on its own line (bold),
+    value on the next."""
     items = bullets.get('community', [])
     chunks: list[str] = []
     for i, item in enumerate(items):
@@ -575,7 +594,7 @@ def build_community_inner(bullets: dict) -> str:
             label, value = item.split(' — ', 1)
         else:
             label, value = item, ''
-        chunks.append(para_label_value(
+        chunks.append(para_label_then_value(
             xml_escape(label),
             xml_escape(value),
             before=0 if i == 0 else 240,
@@ -939,7 +958,7 @@ def main() -> int:
     parser.add_argument('--out', type=Path, default=None,
                         help='output .docx path (default: the generalized resume path)')
     parser.add_argument('--template', type=Path, default=TEMPLATE,
-                        help='source template docx (default: resume-template.docx)')
+                        help='source template docx (default: WSGong_Resume_Template.docx)')
     parser.add_argument('--bullets', type=Path, default=BULLETS_YAML,
                         help='bullets.yaml (default: repo root)')
     args = parser.parse_args()

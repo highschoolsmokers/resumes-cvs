@@ -51,7 +51,7 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parent.parent
 APPLICATIONS = REPO / "applications"
-USER_AGENT = "job-search-playbook/0.1 (url_ingest.py)"
+USER_AGENT = "ws-gong-job-search/0.1 (url_ingest.py)"
 
 
 # -----------------------------------------------------------------------------

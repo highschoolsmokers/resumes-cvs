@@ -17,7 +17,7 @@ Valid source kinds:
     company-fact:<anchor>     — anchor in the sibling company-facts.md
     personal-fact:<dotted.path> — dotted path in config/personal-facts.yaml
     voice:<relative-path>     — path under voice-corpus/
-    template:<anchor>         — verbatim in resume-template.docx or
+    template:<anchor>         — verbatim in WSGong_Resume_Template.docx or
                                 listing.md (rare — accepted for JD echoes)
 
 Sidecar schema (YAML):

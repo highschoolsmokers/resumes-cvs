@@ -4,7 +4,7 @@ One-time helper: pull every plausible bullet / summary line from each known
 resume DOCX so we can hand-curate `bullets.yaml`.
 
 Output is written to stdout as a markdown-ish dump grouped by file. The
-downstream step is human: Your Name verifies every line before we put it in
+downstream step is human: WS Gong verifies every line before we put it in
 `bullets.yaml` (see CLAUDE.md §2 Phase 2).
 """
 from __future__ import annotations
@@ -17,14 +17,14 @@ from docx import Document
 REPO = Path(__file__).resolve().parent.parent
 
 SOURCES = [
-    REPO / "resume-template.docx",
-    REPO / "YYYY-MM-DD-your-resume-generalized.docx",
-    REPO / "NVIDIA" / "your-handle-resume-2026.docx",
-    REPO / "Vercel" / "YourResume_Resume_Vercel.docx",
-    REPO / "Handshake" / "YourResume_Resume_AdversarialAI.docx",
-    REPO / "APublicSpace" / "YourResume_Resume_APublicSpace.docx",
-    REPO / "MarineLayer" / "YourResume_Resume_MarineLayer.docx",
-    REPO / "SFMOMA" / "YourResume_Resume_SFMOMA.docx",
+    REPO / "WSGong_Resume_Template.docx",
+    REPO / "2026-04-17-wsgong-resume-generalized.docx",
+    REPO / "NVIDIA" / "billy-gong-resume-2026.docx",
+    REPO / "Vercel" / "WSGong_Resume_Vercel.docx",
+    REPO / "Handshake" / "WSGong_Resume_AdversarialAI.docx",
+    REPO / "APublicSpace" / "WSGong_Resume_APublicSpace.docx",
+    REPO / "MarineLayer" / "WSGong_Resume_MarineLayer.docx",
+    REPO / "SFMOMA" / "WSGong_Resume_SFMOMA.docx",
 ]
 
 
