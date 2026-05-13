@@ -60,7 +60,7 @@ Binary `.docx` diffs are unreadable. For any generated resume or cover letter:
 
 ### 1.6 Canonical resume style
 
-Every resume goes through `build_resume.py` operating on `WSGong_Resume_Template.docx`. The style spec at `docs/resume-style-spec.md` is authoritative for typography. Do **not** introduce a second resume template, rewrite `build_resume.py` from scratch, or switch fonts without explicit user sign-off.
+Every resume goes through `build_resume.py` operating on `resume-template.docx`. The style spec at `docs/resume-style-spec.md` is authoritative for typography. Do **not** introduce a second resume template, rewrite `build_resume.py` from scratch, or switch fonts without explicit user sign-off.
 
 ## 2. Phased build plan
 
@@ -93,7 +93,7 @@ Goal: a listing in, a tailored `.docx` + `.pdf` out, with every claim traceable.
 
 Create:
 
-- `bullets.yaml` — enumerate every usable accomplishment from the existing `WSGong_Resume_Template.docx` and the tailored resumes under `NVIDIA/`, `Vercel/`, `Handshake/`, etc. Tag each per spec §4.4. Built collaboratively with the user — the initial extraction runs through `scripts/extract_bullets.py`, then the user verifies every line. No auto-fabrication.
+- `bullets.yaml` — enumerate every usable accomplishment from the existing `resume-template.docx` and the tailored resumes under `NVIDIA/`, `Vercel/`, `Handshake/`, etc. Tag each per spec §4.4. Built collaboratively with the user — the initial extraction runs through `scripts/extract_bullets.py`, then the user verifies every line. No auto-fabrication.
 - `build_resume.py` refactor: accepts `--plan <path>` and `--out <path>` flags. Plan YAML has `target_role_family`, `summary_id` / `summary_text`, `skill_order`, `bullets_by_role`, `show_projects` / `show_publications` / `show_community`, and a free-form `picked_because` block for per-bullet rationale. Without `--plan`, produces the generalised resume byte-for-byte (acceptance check).
 - `agents/resume-tailor.md` — prompt per spec §9.2. Includes dry-run mode, `fit-report.md` sibling artifact, and an explicit refusal protocol (`[NEEDS SOURCE]`).
 - `scripts/extract_bullets.py` — helper to dump every DOCX bullet before hand-curation.
@@ -222,7 +222,7 @@ Everything else — searching, scoring, tailoring, drafting, committing, archivi
 - Don't set global git config. Local only.
 - Don't run `git push --force` against `main`. Ever.
 - Don't skip pre-commit hooks (`--no-verify`) unless the user asks. The provenance hook (§8.8) in particular must never be bypassed — it's the hallucination guard.
-- Don't modify `WSGong_Resume_Template.docx` (the pristine master) except to fix a genuine bug in the master itself — and then ask first.
+- Don't modify `resume-template.docx` (the pristine master) except to fix a genuine bug in the master itself — and then ask first.
 - Don't introduce a second resume font, second accent color, or second template layout without user sign-off.
 - Don't `git add .DS_Store` even once — it'll live forever in history.
 - **Don't invent resume bullets.** Every claim must trace to `bullets.yaml` or the template. If you're about to write a sentence you can't cite, write `[NEEDS SOURCE: <claim>]` and stop — never fill the gap with a plausible guess.

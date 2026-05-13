@@ -124,9 +124,9 @@ if [[ -d "$SRC/applications/_template" ]]; then
 fi
 
 # Resume template — ship the pristine version under a generic name.
-if [[ -f "$SRC/WSGong_Resume_Template.docx" ]]; then
-  echo "  copy resume-template.docx ← WSGong_Resume_Template.docx (pristine)"
-  cp "$SRC/WSGong_Resume_Template.docx" "$TARGET/resume-template.docx"
+if [[ -f "$SRC/resume-template.docx" ]]; then
+  echo "  copy resume-template.docx ← resume-template.docx (pristine)"
+  cp "$SRC/resume-template.docx" "$TARGET/resume-template.docx"
 fi
 
 # -----------------------------------------------------------------------------

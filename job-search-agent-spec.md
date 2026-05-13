@@ -8,7 +8,7 @@
 
 A local-first, git-versioned system of cooperating agents that (1) finds technical roles W.S. Gong is a strong fit for, (2) provisions and tailors a resume for each, (3) drafts a cover letter in his voice, (4) tracks every application through to outcome, and (5) archives past applications in a form that is easy to grep, diff, and learn from.
 
-The design leans on tools already available: Apple Mail via AppleScript (for inbox monitoring and staging recruiter-reply drafts — the user is an iCloud Mail user, not Gmail), Google Calendar via its connected MCP (for interview scheduling), Chrome MCP (for DOM-aware browsing of LinkedIn and Greenhouse), Google Drive and Notion (optional), plus the existing `build_resume.py` pipeline and the `WSGong_Resume_Template.docx` master. State lives on disk under `Resumes/`. Versioning is plain `git` — every listing, resume revision, cover letter, and tracker change is a commit.
+The design leans on tools already available: Apple Mail via AppleScript (for inbox monitoring and staging recruiter-reply drafts — the user is an iCloud Mail user, not Gmail), Google Calendar via its connected MCP (for interview scheduling), Chrome MCP (for DOM-aware browsing of LinkedIn and Greenhouse), Google Drive and Notion (optional), plus the existing `build_resume.py` pipeline and the `resume-template.docx` master. State lives on disk under `Resumes/`. Versioning is plain `git` — every listing, resume revision, cover letter, and tracker change is a commit.
 
 There is no persistent mail credential to store anywhere: the agents talk to the already-signed-in Mail.app (which holds the iCloud IMAP session) via the `mcp__Control_your_Mac__osascript` tool.
 
@@ -63,7 +63,7 @@ Resumes/
 ├── .git/
 ├── job-search-agent-spec.md          ← this file
 ├── build_resume.py                   ← existing generator
-├── WSGong_Resume_Template.docx       ← pristine master template
+├── resume-template.docx       ← pristine master template
 ├── 2026-04-17-wsgong-resume-generalized.docx  ← latest generalized build
 │
 ├── config/
@@ -322,7 +322,7 @@ For each selected listing, produce a one-page `.docx` resume (+ `.pdf` export) t
 
 ### 4.2 Inputs
 
-- Generalised source: `WSGong_Resume_Template.docx` + the most recent `*-wsgong-resume-generalized.docx` build.
+- Generalised source: `resume-template.docx` + the most recent `*-wsgong-resume-generalized.docx` build.
 - The listing's `description_md`, `requirements`, `tech_mentions`.
 - Optional: prior tailored resumes for the same company (reused as scaffolding — see §8).
 
@@ -858,7 +858,7 @@ These are starting points, not final prompts. Each will live at `agents/<name>.m
 
 ### 9.2 `resume-tailor`
 
-> You tailor W.S. Gong's resume for one listing. Read the listing, `bullets.yaml`, `WSGong_Resume_Template.docx`, and `docs/resume-style-spec.md`. Produce `resume-plan.yaml` selecting: a rewritten summary (≤ 3 sentences), an ordering of skill categories, and 2–4 bullet IDs per role. Hard rule: every claim must trace to an existing bullet or the generalized resume. If you are about to write a sentence you cannot cite to a `bullets.yaml` ID, STOP and write `[NEEDS SOURCE: <claim>]` instead — never fill the gap with a plausible guess. Then call `build_resume.py --plan resume-plan.yaml` to emit `resume.docx` in the application folder. Emit `resume.provenance.yaml` per §8.8. Commit on branch `app/<slug>`; the pre-commit hook will block you if any claim is unsourced.
+> You tailor W.S. Gong's resume for one listing. Read the listing, `bullets.yaml`, `resume-template.docx`, and `docs/resume-style-spec.md`. Produce `resume-plan.yaml` selecting: a rewritten summary (≤ 3 sentences), an ordering of skill categories, and 2–4 bullet IDs per role. Hard rule: every claim must trace to an existing bullet or the generalized resume. If you are about to write a sentence you cannot cite to a `bullets.yaml` ID, STOP and write `[NEEDS SOURCE: <claim>]` instead — never fill the gap with a plausible guess. Then call `build_resume.py --plan resume-plan.yaml` to emit `resume.docx` in the application folder. Emit `resume.provenance.yaml` per §8.8. Commit on branch `app/<slug>`; the pre-commit hook will block you if any claim is unsourced.
 
 ### 9.3 `cover-letter-writer`
 
