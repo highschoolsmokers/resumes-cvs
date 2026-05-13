@@ -14,105 +14,161 @@ There is no persistent mail credential to store anywhere: the agents talk to the
 
 ## 1. Architecture at a glance
 
-Seven cooperating agents plus a URL-ingest utility, each with a narrow job and a shared on-disk contract. Two entry points converge on the same tailoring pipeline:
+Eight cooperating agents plus a URL-ingest utility, each with a narrow job and a shared on-disk contract. Two entry points converge on the same tailoring pipeline; `jd-analyzer` runs once as a shared pre-step so both tailoring agents consume the same JD analysis (§9.0):
 
     ┌──────────────────────┐        ┌──────────────────────┐
-    │  search-agent        │        │  url-ingest          │  single listing (LinkedIn, etc.)
-    │  (bulk, scheduled)   │        │  (on-demand, 1 URL)  │
-    └──────────┬───────────┘        └──────────┬───────────┘
-               │                               │
+    │  search-agent        │        │  url-ingest          │  single listing
+    │  (bulk, scheduled)   │        │  (on-demand or       │  (LinkedIn / ATS / ...)
+    └──────────┬───────────┘        │   apply-queue drain) │
+               │                    └──────────┬───────────┘
     ┌──────────▼───────────┐                   │
     │  fit-scorer          │                   │
     └──────────┬───────────┘                   │
                │   top-N forwarded             │   always forwarded
                └───────────────┬───────────────┘
                                │
-                    ┌──────────▼───────────┐          ┌──────────────────────┐
-                    │  resume-tailor       │─────────▶│  cover-letter-writer │
-                    └──────────┬───────────┘          └──────────┬───────────┘
-                               │                                 │
-                               └────────────┬────────────────────┘
+                    ┌──────────▼───────────┐
+                    │  jd-analyzer         │  shared pre-step
+                    │  (must-haves, etc.)  │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────▼───────────┐    ┌──────────────────────┐
+                    │  resume-tailor       │───▶│  cover-letter-writer │  parallel fan-out
+                    └──────────┬───────────┘    └──────────┬───────────┘
+                               │                           │
+                               └────────────┬──────────────┘
                                             │
                                  ┌──────────▼───────────┐
-                                 │  tracker-agent       │  Apple Mail watcher, updates tracker.yaml
+                                 │  tracker-agent       │  Apple Mail watcher
                                  └──────┬───────┬───────┘
-                          scheduling    │       │   question
+                          scheduling    │       │   questions
                               ┌─────────┘       └─────────┐
                               ▼                           ▼
                     ┌──────────────────┐        ┌──────────────────┐
                     │  scheduler       │        │  reply-drafter   │
                     │  (calendar)      │        │  (follow-ups)    │
-                    └──────────┬───────┘        └──────────┬───────┘
-                               │                           │
-                               └────────────┬──────────────┘
-                                            ▼
-                                 ┌──────────────────────┐
-                                 │  archiver            │  moves closed apps → archive/<year>/
-                                 └──────────────────────┘
+                    └──────────────────┘        └──────────────────┘
 
-All of them are invoked from Cowork conversations or from a single scheduled task. None runs continuously; each one is idempotent so a rerun produces the same output for the same inputs.
+(Archiver — moving closed apps to `archive/<year>/` — is in §9.5 of this spec as a deferred Phase 5; not yet implemented.)
 
-The two entry points are symmetric from `resume-tailor` onwards — the URL-ingest path is just a way for the user to say "skip the search, I already found this one" and drop directly into tailoring. Details in §3.8.
+All of these are invoked from Claude Code (or its headless `claude -p` form for the apply-queue drainer) or from a single scheduled task. None runs continuously; each one is idempotent so a rerun produces the same output for the same inputs.
+
+The two entry points are symmetric from `jd-analyzer` onwards — the URL-ingest path is just a way to say "skip the search, I already found this one" and drop directly into tailoring. Details in §3.8.
 
 ## 2. Repository layout
 
-The `Resumes/` workspace folder becomes a git repo. Everything the agents produce or read lives in it.
+The repo is the entire system: prompts, drivers, closed-universe data, derived caches, per-application outputs.
 
 ```
 Resumes/
 ├── .git/
+├── .githooks/
+│   └── pre-commit                    ← provenance gate (§8.8); install via
+│                                       scripts/install_provenance_hook.sh
+├── .claude/
+│   ├── commands/apply.md             ← /apply slash command
+│   └── skills/apply/SKILL.md         ← apply skill orchestration
+│
+├── README.md
+├── LICENSE
+├── CLAUDE.md                         ← operating playbook
 ├── job-search-agent-spec.md          ← this file
-├── build_resume.py                   ← existing generator
-├── resume-template.docx       ← pristine master template
-├── 2026-04-17-wsgong-resume-generalized.docx  ← latest generalized build
+├── job-search.plugin
+├── requirements.txt
+│
+├── resume-template.docx              ← pristine Swiss master (Inter, 2-col)
+├── *-wsgong-resume-generalized.docx  ← generated; gitignored on the public fork
+├── bullets.yaml                      ← closed universe of resume claims;
+│                                       gitignored on the public fork (§4.4)
+├── dashboard.md                      ← generated by scripts/dashboard.py; gitignored
+├── queue.jsonl / queue.history.jsonl ← apply queue state; gitignored
+│
+├── build_resume.py                   ← render resume.docx from plan + bullets
+├── build_cover_letter.py             ← render cover-letter.docx (Inter, §5.4)
 │
 ├── config/
-│   ├── criteria.yaml                 ← role targeting rules (§3.2)
-│   ├── sites.yaml                    ← search-site adapters (§3.3)
-│   ├── voice.yaml                    ← cover-letter voice knobs
-│   ├── personal-facts.yaml           ← gitignored; eligibility/comp/start date (§8.7)
-│   ├── personal-facts.example.yaml   ← template, committed
-│   └── secrets.env.example           ← placeholder (no real secrets in git)
+│   ├── criteria.example.yaml         ← role-targeting template (committed)
+│   ├── criteria.yaml                 ← populated; gitignored (§3.2)
+│   ├── voice.example.yaml / voice.yaml
+│   ├── sites.yaml                    ← search-site adapters (§3.3, committed)
+│   ├── personal-facts.example.yaml   ← committed scaffold (§8.7)
+│   └── personal-facts.yaml           ← gitignored; user-populated
 │
-├── voice-corpus/                     ← writing samples that inform tone
-│   ├── nvidia-application-answers.md
-│   ├── bindery-readme-excerpt.md
-│   └── cover-letters-archive/
+├── voice-corpus/                     ← prior cover letters + long-form samples
+│   ├── README.md                     ← committed
+│   └── *.md                          ← gitignored (private content)
 │
-├── scripts/
-│   ├── docx_to_pdf.py                ← LibreOffice-headless wrapper (§8.6)
-│   └── url_ingest.py                 ← single-listing entry point (§3.8)
+├── docs/
+│   ├── spec.md                       ← brief spec (six-bucket summary)
+│   └── resume-style-spec.md          ← typography invariants (Inter, grid, baseline)
+│
+├── agents/                           ← agent prompt frontmatter files
+│   ├── jd-analyzer.md                ← shared pre-step (§9.0)
+│   ├── search-agent.md               ← §9.1
+│   ├── fit-scorer.md                 ← §9.1.1 (also called from search/run.py)
+│   ├── resume-tailor.md              ← §9.2
+│   ├── cover-letter-writer.md        ← §9.3
+│   ├── tracker-agent.md              ← §9.4
+│   ├── reply-drafter.md              ← §9.6
+│   └── scheduler.md                  ← §9.7
+│   (no archiver.md yet — deferred, see §9.5 / §10 Phase 5)
+│
+├── scripts/                          ← deterministic drivers
+│   ├── url_ingest.py                 ← URL → listing.json + branch (§3.8)
+│   ├── docx_to_pdf.py                ← LibreOffice batch render (§8.6)
+│   ├── merge_pdfs.py                 ← combined.pdf (unused by /apply; available)
+│   ├── check_provenance.py           ← provenance gate (§8.8)
+│   ├── lint_bullets.py               ← bullets.yaml schema lint
+│   ├── lint_resume.py                ← resume DOCX whole-document Swiss lint
+│   ├── bullets_lookup.py             ← human grep over bullets.yaml
+│   ├── extract_bullets.py            ← one-time dump of every DOCX bullet
+│   ├── backprop_edits.py             ← detect hand-edits to feed bullets.yaml
+│   ├── build_index.py / retrieve.py  ← local vector index over bullets + voice
+│   ├── queue_add.py / apply_queue.py / queue_status.py  ← async apply queue
+│   ├── bullet_outcomes.py            ← provenance × tracker → leaderboard
+│   ├── sweep.py                      ← Apple Mail tracker sweep
+│   ├── dashboard.py                  ← rebuild dashboard.md
+│   ├── install_apply_skill.sh        ← copy apply/ into Cowork user-skills dir
+│   ├── install_apply_queue_schedule.sh
+│   └── install_provenance_hook.sh    ← wire .githooks/pre-commit
 │
 ├── search/
-│   ├── runs/<YYYY-MM-DD-HHMM>/
-│   │   ├── raw/                      ← raw HTML/JSON from each site
-│   │   ├── listings.jsonl            ← normalised listings (§3.4)
-│   │   ├── scored.jsonl              ← after fit-scorer
-│   │   └── summary.md                ← human-readable run report
-│   └── seen.db                       ← SQLite de-dupe cache (sha256(listing_url))
+│   ├── run.py                        ← top-of-funnel driver (§9.1)
+│   ├── runs/<YYYY-MM-DD-HHMM>/       ← gitignored (private feed history)
+│   │   ├── listings.jsonl            ← normalised (§3.4)
+│   │   ├── scored.jsonl              ← post fit-scorer
+│   │   └── summary.md
+│   └── seen.db                       ← SQLite de-dupe cache; gitignored
 │
-├── applications/
-│   └── <Company>/<Role-Slug>-<YYYY-MM-DD>/
-│       ├── listing.json              ← canonical listing (immutable)
-│       ├── listing.md                ← rendered job description
-│       ├── fit-notes.md              ← why this one matched
-│       ├── resume.docx               ← tailored
-│       ├── resume.pdf                ← same, exported
-│       ├── cover-letter.md           ← tailored
-│       ├── cover-letter.pdf
-│       ├── application-answers.md    ← supplemental Q&A (when asked)
-│       ├── replies/                  ← recruiter follow-up drafts (§6.7)
-│       │   └── <YYYY-MM-DD>-<topic>.md
-│       ├── schedule/                 ← interview-scheduling artifacts (§6.8)
-│       │   └── <YYYY-MM-DD>-<event>.yaml
-│       ├── tracker.yaml              ← status timeline (§6.2)
-│       └── notes.md                  ← freeform running log
+├── sweep/runs/<ts>/                  ← tracker sweep batches; gitignored
 │
-└── archive/
-    └── <year>/<Company>-<Role>-<YYYY-MM-DD>/   ← moved by archiver
+├── state/                            ← derived, rebuildable; gitignored
+│   ├── embeddings.npz                ← vector index over bullets + voice
+│   ├── index_meta.yaml
+│   └── bullet_outcomes.{csv,md}      ← provenance × tracker outcomes
+│
+└── applications/
+    ├── _template/                    ← committed scaffold for new app folders
+    └── <Company>/<role-slug>-<YYYY-MM-DD>/   ← gitignored
+        ├── listing.{json,md}         ← canonical (immutable)
+        ├── jd-analysis.md            ← shared pre-step (§9.0)
+        ├── resume-plan.yaml          ← plan consumed by build_resume.py
+        ├── resume.{docx,pdf}         ← deliverable
+        ├── resume.unpacked/          ← OOXML for legible git diffs
+        ├── resume.provenance.yaml    ← every claim → bullets.yaml id
+        ├── fit-report.md             ← conditional — emitted only on gaps
+        ├── company-facts.md          ← research artefact with URLs
+        ├── cover-letter.{md,docx,pdf}
+        ├── cover-letter.provenance.yaml
+        ├── tracker.yaml              ← status timeline (§6.2)
+        ├── replies/                  ← recruiter reply drafts (§6.7)
+        │   └── <YYYY-MM-DD>-<topic>.{md,provenance.yaml}
+        ├── schedule/                 ← interview slots (§6.8)
+        │   └── <YYYY-MM-DD>-<event>.yaml
+        └── notes.md                  ← freeform running log
 ```
 
-Conventions: every folder and file name is lowercase-kebab, with an ISO date suffix when mutability matters. A role slug is `{title-lower-kebab}-{optional-location}`; e.g. `developer-advocate-sf`. The per-company folder already in use (`NVIDIA/`, `Vercel/`, `Handshake/`) remains valid — the agents treat any existing top-level company folder as a legacy application and migrate it on first touch.
+Conventions: every folder and file name is lowercase-kebab, with an ISO date suffix when mutability matters. A role slug is `{title-lower-kebab}-{optional-location}`; e.g. `developer-advocate-sf`. Legacy top-level company folders (`NVIDIA/`, `Vercel/`, `Handshake/`, `APublicSpace/`, `MarineLayer/`, `SFMOMA/`) were migrated into `applications/` in Phase 5 — they no longer live at the repo root.
 
 ### 2.1 Git strategy
 
@@ -265,7 +321,7 @@ De-dupe key: `sha256(source + source_url)` stored in `search/seen.db`.
 
 ### 3.5 Fit scorer
 
-A second sub-agent, not a separate service. Given a listing and `criteria.yaml`, it returns a score in [0, 100] with a short rationale. Rough rubric (tunable in `criteria.yaml`):
+Two passes in one component: a deterministic rule pass in `search/run.py:score_listing()` and an optional qualitative pass driven by `agents/fit-scorer.md`. The deterministic pass produces a score in [0, 100] with a one-line rationale per matched rule — no LLM call, idempotent across reruns. The qualitative pass (when a user invokes the agent) reads the rule output plus the listing and emits the same shape with a one-sentence LLM-written reason, useful when a listing borderline-fails on rules but reads like a real fit. Rough rubric (tunable in `criteria.yaml`):
 
 - +40 baseline if title matches `title_keywords_include`
 - −∞ (hard reject) if any `title_keywords_exclude` or `company_exclude` hits
@@ -378,6 +434,14 @@ education:                            # structural; never omitted
     school: "San Francisco State University"
     degree: "MFA, Creative Writing (Fiction)"
     ...
+
+publications_activity:                # optional; per-role items the tailor
+  - id: …                             #   can surface in a Publications block
+    text: "…"
+
+community:                            # optional; conferences / talks / open source
+  - id: …
+    text: "…"
 ```
 
 `role_family` values come from `config/criteria.yaml` (currently: `developer-relations`, `forward-deployed-engineer`, `agentic-programmer`, `technical-writer`). The tailor prefers bullets whose family list contains the target family but may pull a neighbouring bullet if the JD signal is strong.
@@ -547,7 +611,19 @@ status_history:
     status: applied
     source: manual
 next_action: "wait 7d for recruiter response; follow up 2026-04-25"
-mail_message_ids: []   # RFC-822 Message-Id values captured from Apple Mail
+
+# Sender-allowlist for the mail sweep. Seeded by listing.json.company_domain;
+# the tracker-agent proposes additions when a new domain appears — never
+# adds them silently.
+company_domains:
+  - "nvidia.com"
+
+# ISO-8601 timestamp of the most recent sweep that touched this tracker.
+# scripts/sweep.py writes this; later sweeps use it to narrow the Mail.app
+# query window.
+last_checked_at: 2026-04-18T16:00-07:00
+
+mail_message_ids: []     # RFC-822 Message-Id values captured from Apple Mail
 mailbox: "JobSearch/NVIDIA"   # iCloud Mail nested mailbox
 notes_ref: notes.md
 ```
@@ -850,11 +926,19 @@ Agents are instructed: when an ungrounded claim would be the natural next senten
 
 ## 9. Agent prompt sketches
 
-These are starting points, not final prompts. Each will live at `agents/<name>.md` in the repo and be loaded by the Cowork / Claude Code invocation that runs the agent.
+These are starting points, not final prompts. Each lives at `agents/<name>.md` in the repo and is loaded by the Claude Code invocation that runs the agent.
+
+### 9.0 `jd-analyzer`
+
+> You read one normalised listing (`listing.json` + `listing.md`) and emit one short markdown file: `applications/<…>/jd-analysis.md`. Sections: Must-haves, Nice-to-haves, Cultural signals, Jargon, Red flags. Quote source phrases inline for cultural signals; never invent — every bullet must trace to a phrase in `listing.md`. Target ~1 KB. The downstream resume-tailor and cover-letter-writer both read this file so they don't independently re-derive the same signals.
 
 ### 9.1 `search-agent`
 
 > You are a job-search agent for W.S. Gong. Read `config/criteria.yaml` and `config/sites.yaml`. For each site, execute its strategy (chrome-mcp | web-fetch | api). Normalise every listing to the schema in §3.4. De-dupe against `search/seen.db`. Write one `listings.jsonl` to a fresh `search/runs/<timestamp>/` folder. Do not score, rank, or drop listings — that is the fit-scorer's job. Log every adapter's raw response under `raw/` for debugging. Commit nothing.
+
+### 9.1.1 `fit-scorer`
+
+> You score one listing for W.S. Gong's fit. Input: a listing (raw JSON or one row from `listings.jsonl`) and `config/criteria.yaml`. Apply the deterministic rubric in §3.5 — `search/run.py:score_listing()` already runs this pass programmatically, so a Claude invocation only adds value when a listing borderline-fails on rules but reads like a real fit. Output the same `{score, rationale, recommend}` shape; the LLM-written reason should be a single sentence that names the specific JD signal. Never raise a score above the deterministic ceiling by more than +15.
 
 ### 9.2 `resume-tailor`
 
@@ -868,9 +952,11 @@ These are starting points, not final prompts. Each will live at `agents/<name>.m
 
 > For every application with status in {applied, screened, interviewing}, query Apple Mail (via `mcp__Control_your_Mac__osascript`) for messages received since `last_checked_at` in the INBOX and in `JobSearch/<Company>`, matching the company's domain or recruiter-ATS signatures. Classify each thread into: screen request, scheduling, questions, rejection, offer, or other. Update `tracker.yaml` (promote-only) and append to `notes.md` with the `message://` deep-link. For **scheduling** threads, hand off to `scheduler`. For **questions** threads, hand off to `reply-drafter`. Never send email — only stage drafts. Regenerate `dashboard.md` at repo root.
 
-### 9.5 `archiver`
+### 9.5 `archiver` *(deferred — Phase 5 of §10, not yet implemented)*
 
 > Move any application matching §7.1 conditions from `applications/` to `archive/<YYYY>/`. Append to `archive/<YYYY>/index.md`. Rename the Apple Mail mailbox `JobSearch/<Company>` → `JobSearch-Archive/<Company>` via AppleScript. Commit on `main`.
+
+There is no `agents/archiver.md` on disk yet. Until the agent lands, archiving happens by `git mv` performed by the user.
 
 ### 9.6 `reply-drafter`
 
@@ -886,26 +972,29 @@ These are starting points, not final prompts. Each will live at `agents/<name>.m
 
 ## 10. Rollout plan
 
-A staged build — each phase is shippable on its own.
+A staged build — each phase shippable on its own. Status reflects what's on disk as of 2026-05-13.
 
-- **Phase 1 (week 1):** repo init + `criteria.yaml`, `sites.yaml` for Greenhouse/Lever/Ashby APIs only, `search-agent`, `fit-scorer`, `summary.md`. No tailoring yet. Proves the top-of-funnel.
-- **Phase 2 (week 2):** `bullets.yaml` built out from existing template + NVIDIA/Vercel/Handshake tailored resumes. `resume-tailor` + `build_resume.py --plan` extension. `scripts/docx_to_pdf.py` (§8.6) lands with this phase. `scripts/url_ingest.py` (§3.8) also lands here — it's an on-ramp into tailoring. `scripts/check_provenance.py` (§8.8) starts out warning-only; flip it to a blocking pre-commit hook once resume provenance is stable. Manual cover letters for now.
-- **Phase 3 (week 3):** `voice-corpus/` seeded; `cover-letter-writer` + `build_cover_letter.py`. `company-facts.md` research pass enforced. Provenance hook extended to cover letters (blocking). End-to-end auto-tailoring on branch; user merges on approval.
-- **Phase 4 (week 4):** `tracker-agent` + Apple Mail AppleScript watcher + `dashboard.md`. Scheduled sweeps on. `reply-drafter` (§6.7) and `scheduler` (§6.8) ship alongside the tracker — replies need `config/personal-facts.yaml` in place first; scheduler needs the Google Calendar MCP configured. Provenance hook extended to reply drafts (blocking).
-- **Phase 5 (week 5):** `archiver` + `archive-review` retro. Migrate the existing `NVIDIA/`, `Vercel/`, `Handshake/`, `APublicSpace/`, `MarineLayer/`, `SFMOMA/` folders into `applications/` format.
+- **Phase 1 — top-of-funnel** *(shipped)*. `config/criteria.yaml` + `sites.yaml` for Greenhouse/Lever/Ashby, `agents/search-agent.md`, `agents/fit-scorer.md`, `search/run.py`, `summary.md`. Proves the top-of-funnel.
+- **Phase 2 — resume tailoring** *(shipped)*. `bullets.yaml`, `agents/resume-tailor.md`, `build_resume.py --plan`, `scripts/url_ingest.py`, `scripts/docx_to_pdf.py`, `scripts/check_provenance.py` (warn mode then block, see Phase 7 below).
+- **Phase 3 — cover letter** *(shipped)*. `voice-corpus/`, `agents/cover-letter-writer.md`, `build_cover_letter.py`, `company-facts.md` research pass enforced.
+- **Phase 4 — tracking** *(shipped, scheduled sweep pending)*. `agents/tracker-agent.md` + `scripts/sweep.py` + `scripts/dashboard.py`. `agents/reply-drafter.md` (§6.7) and `agents/scheduler.md` (§6.8) ship alongside.
+- **Phase 5 — archiving** *(deferred)*. `agents/archiver.md` not implemented. Legacy folder migration into `applications/` is done; the on-going archiver agent is a follow-up.
+- **Phase 6 — `/apply` orchestration sharpening** *(shipped)*. Auto-commit branch, parallel resume-tailor + cover-letter-writer fan-out, single commit, conditional `fit-report.md`, parallel research fetches.
+- **Phase 7 — JD analysis as shared pre-step** *(shipped)*. `agents/jd-analyzer.md` produces one `jd-analysis.md` consumed by both tailoring agents.
+- **Phase 8 — caches + LibreOffice batch** *(shipped, partially adopted by agents)*. Company-facts cache (14-day TTL), role-family plan cache (`applications/_plans/`), batch DOCX→PDF.
+- **Phase 9 — semantic retrieval** *(shipped)*. `scripts/build_index.py` + `scripts/retrieve.py` over `bullets.yaml` and `voice-corpus/` using `sentence-transformers/all-MiniLM-L6-v2`.
+- **Phase 10 — apply queue** *(shipped, scheduled drainer pending user setup)*. `scripts/queue_add.py`, `scripts/apply_queue.py`, `scripts/queue_status.py`. Drainer registers via the scheduled-tasks MCP.
+- **Phase 11 — bullet outcome tracking** *(shipped)*. `scripts/bullet_outcomes.py` joins provenance × tracker; surfaces a leaderboard in `dashboard.md`.
+- **Phase 12 — provenance gate enforcement** *(shipped 2026-05-13)*. `.githooks/pre-commit` installed via `scripts/install_provenance_hook.sh`. The "hallucination-resistant by construction" claim is now actually enforced on commit.
 
 ## 11. Open questions
 
-1. Do you want the dashboard surfaced as a Notion database mirror (read-only, rebuilt from `tracker.yaml` files) or is a local `dashboard.md` enough? The hybrid adds complexity; the spec currently assumes not.
-2. `comp_floor_usd` — is 180k right, or should Phase 1 run without any comp filter while we see what the corpus looks like?
-3. For LinkedIn specifically: are "Easy Apply" listings in scope, or only listings that route out to a company ATS? Easy Apply needs special-cased tailoring since it takes a PDF upload and a handful of inline fields. The URL-ingest path (§3.8) currently produces the listing either way — the open question is about the apply flow, not discovery.
-4. Cover letter PDF letterhead — match the resume exactly, or a slimmer top strip (name + one line of contact)? I'd default to slimmer.
-5. Retention: how long does `search/runs/` keep raw HTML? The spec silently assumes forever; a 30-day broom may be kinder to the repo.
-6. `config/personal-facts.yaml` — review the §8.7 schema and decide what you're comfortable having the reply-drafter answer automatically. Everything not in the file becomes `[USER TO ANSWER]` placeholders — which is the safe default but costs you more turnarounds with recruiters.
-7. Scheduling window defaults — currently 9am–6pm PT, next 10 business days. Override via `config/voice.yaml → scheduling_preferences`?
-8. Company research depth for cover letters — the research pass currently fetches homepage + /products + /customers + 6 months of /blog. Enough? Too much? Any companies where that's likely to return garbage?
-9. Combined-PDF ordering — resume first, cover letter second. Flip it for employers that want the cover letter on top?
-10. Provenance strictness in early phases — the hook ships warning-only in Phase 2 and flips to blocking before Phase 3 lands. Comfortable with that ramp, or should it be blocking from day one?
+Resolved questions have been removed; CLAUDE.md §8 has the resolution log.
+
+1. `comp_floor_usd` — is 180k right, or should we run without any comp filter while we see what the corpus looks like?
+2. For LinkedIn specifically: are "Easy Apply" listings in scope, or only listings that route out to a company ATS? Easy Apply needs special-cased tailoring since it takes a PDF upload and a handful of inline fields. The URL-ingest path (§3.8) currently produces the listing either way — the open question is about the apply flow, not discovery.
+3. Retention: how long does `search/runs/` keep raw HTML? The spec silently assumes forever; a 30-day broom may be kinder to the repo.
+4. Company research depth for cover letters — the research pass currently fetches homepage + /products + /customers + 6 months of /blog. Enough? Too much? Any companies where that's likely to return garbage?
 
 ---
 
