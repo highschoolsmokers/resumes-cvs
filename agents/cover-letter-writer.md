@@ -104,8 +104,10 @@ In the same application folder:
 
 **First check the company-facts cache.** Before fetching anything, glob
 `applications/<Same Company>/*/company-facts.md` for sibling applications
-at the same company. If any sibling exists with mtime within the cache TTL
-(default 14 days; override via `$COMPANY_FACTS_TTL_DAYS`):
+at the same company. **Skip the current application's own folder** — only
+consider applications at a *different* role-slug-date. If any qualifying
+sibling exists with mtime within the cache TTL (default 14 days; override
+via `$COMPANY_FACTS_TTL_DAYS`):
 
 1. Copy the freshest sibling into the current application folder as the
    starting `company-facts.md`.

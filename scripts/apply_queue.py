@@ -68,28 +68,50 @@ def append_jsonl(path: Path, entry: dict) -> None:
         f.write(json.dumps(entry) + "\n")
 
 
-def reset_to_main() -> bool:
-    """Ensure we're on main before invoking the next /apply.
+def reset_to_main() -> tuple[bool, str]:
+    """Ensure we're at main's tip before invoking the next /apply.
 
     Each /apply creates an app/<…> branch; without resetting, queue entries
-    after the first stack their branches on top of each other. Returns
-    False if main can't be checked out cleanly (uncommitted changes, etc.).
+    after the first stack their branches on top of each other.
+
+    Two cases to handle:
+      1. Plain checkout — works when this repo has main as a branch we can
+         switch to.
+      2. We're inside a git worktree whose parent already has `main` checked
+         out somewhere else. `git checkout main` refuses ("already used by
+         worktree at /path/..."). Detach to main's tip instead.
+
+    Returns (ok, reason). `reason` is "" on success or a short tag describing
+    the failure for retry classification.
     """
     try:
         r = subprocess.run(["git", "-C", str(REPO), "checkout", "main"],
                            capture_output=True, text=True)
-        if r.returncode != 0:
-            sys.stderr.write(f"apply_queue.py: `git checkout main` failed:\n"
-                             f"{r.stderr}\n")
-            return False
+        if r.returncode == 0:
+            return True, ""
+        # Other-worktree-has-main case: detach to main's tip and continue.
+        if "already used by worktree" in (r.stderr or ""):
+            d = subprocess.run(
+                ["git", "-C", str(REPO), "checkout", "--detach", "main"],
+                capture_output=True, text=True,
+            )
+            if d.returncode == 0:
+                return True, ""
+            sys.stderr.write("apply_queue.py: detach to main failed:\n"
+                             f"{d.stderr}\n")
+            return False, "checkout-detach-failed"
+        sys.stderr.write("apply_queue.py: `git checkout main` failed:\n"
+                         f"{r.stderr}\n")
+        return False, "checkout-failed"
     except FileNotFoundError:
         sys.stderr.write("apply_queue.py: git not found on PATH.\n")
-        return False
-    return True
+        return False, "git-missing"
 
 
-def run_one(entry: dict, dry_run: bool) -> bool:
-    """Return True on success."""
+def run_one(entry: dict, dry_run: bool) -> tuple[bool, str]:
+    """Return (ok, failure_kind). `failure_kind` is "" on success, "infra"
+    for environment problems (don't blame the URL), or "url" for failures
+    the URL itself caused."""
     prompt = f"/apply {entry['url']}"
     if entry.get("company_hint"):
         prompt += f' --company "{entry["company_hint"]}"'
@@ -103,10 +125,11 @@ def run_one(entry: dict, dry_run: bool) -> bool:
            "--max-turns", "30"]
     if dry_run:
         print(f"DRY: would run: {' '.join(cmd)}")
-        return True
+        return True, ""
 
-    if not reset_to_main():
-        return False
+    ok, reason = reset_to_main()
+    if not ok:
+        return False, "infra"
 
     print(f"apply_queue.py: running {prompt}")
     try:
@@ -114,13 +137,17 @@ def run_one(entry: dict, dry_run: bool) -> bool:
     except FileNotFoundError:
         sys.stderr.write(f"apply_queue.py: {CLAUDE_BIN} not found on PATH. "
                          "Install Claude Code or set CLAUDE_BIN.\n")
-        return False
+        return False, "infra"
 
     if r.returncode != 0:
         sys.stderr.write(f"apply_queue.py: claude exited {r.returncode}\n")
         sys.stderr.write((r.stderr or "")[-2000:])
-        return False
-    return True
+        # claude exits non-zero for a variety of reasons; without parsing the
+        # stream-json, we can't tell URL-specific from infra. Conservative
+        # choice: treat as URL failure so it eventually moves to failed.jsonl
+        # rather than blocking the queue forever on a single bad entry.
+        return False, "url"
+    return True, ""
 
 
 def drain_once(dry_run: bool = False) -> int:
@@ -132,20 +159,31 @@ def drain_once(dry_run: bool = False) -> int:
     processed = 0
     remaining: list[dict] = []
     for entry in entries:
-        ok = run_one(entry, dry_run)
+        ok, failure_kind = run_one(entry, dry_run)
         if ok:
             entry["completed_at"] = now_iso()
             append_jsonl(HISTORY, entry)
             processed += 1
+            continue
+
+        entry["last_failed_at"] = now_iso()
+        if failure_kind == "infra":
+            # Don't blame the URL for environment problems (claude binary
+            # missing, can't reset to main, etc.) — bail without incrementing
+            # retries. Subsequent entries would just hit the same problem.
+            sys.stderr.write("apply_queue.py: infrastructure failure; "
+                             "leaving queue intact for next drain.\n")
+            remaining.append(entry)
+            remaining.extend(entries[entries.index(entry) + 1:])
+            break
+
+        entry["retries"] = int(entry.get("retries", 0)) + 1
+        if entry["retries"] >= MAX_RETRIES:
+            sys.stderr.write(f"apply_queue.py: giving up on {entry['url']} "
+                             f"after {entry['retries']} tries\n")
+            append_jsonl(FAILED, entry)
         else:
-            entry["retries"] = int(entry.get("retries", 0)) + 1
-            entry["last_failed_at"] = now_iso()
-            if entry["retries"] >= MAX_RETRIES:
-                sys.stderr.write(f"apply_queue.py: giving up on {entry['url']} "
-                                 f"after {entry['retries']} tries\n")
-                append_jsonl(FAILED, entry)
-            else:
-                remaining.append(entry)
+            remaining.append(entry)
 
     write_queue(remaining)
     return processed

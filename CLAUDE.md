@@ -61,12 +61,16 @@ If you need to track a file under a path like the above, refactor the path — d
 
 ### 1.5 DOCX handling
 
-Binary `.docx` diffs are unreadable. For any generated resume or cover letter:
+Binary `.docx` diffs are unreadable. For the **generated resume** (where back-propagation of hand-edits into `bullets.yaml` depends on diffing the OOXML):
 
 1. Write the `.docx` to its final location.
 2. Also unpack it (zip → OOXML XML) to a sibling `*.unpacked/` folder, pretty-printed.
-3. Commit both. `git log -- applications/<…>/resume.unpacked/` becomes the real audit trail.
+3. Commit both when committable. On the public-template repo, `*-generalized.unpacked/` is gitignored — the unpacked sibling is for local `git log -- applications/<…>/resume.unpacked/` audit during private use.
 4. Never edit the OOXML in the unpacked dir directly — it's output, not source.
+
+The `/apply` skill passes `--no-unpacked` to `build_resume.py` for per-application tailoring (the unpacked sibling is regeneratable and inflates the working tree). The full unpacked sibling is written when building the generalized resume.
+
+**Cover letters do NOT get a `.unpacked/` sibling.** `build_cover_letter.py` doesn't write one, and the back-propagation flow (`scripts/backprop_edits.py`) targets `bullets.yaml` not the letter body — there's no equivalent loop that benefits from the OOXML diff.
 
 ### 1.6 Canonical resume style
 
