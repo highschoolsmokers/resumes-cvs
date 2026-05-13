@@ -78,6 +78,15 @@ def convert_batch(docxs: list[Path], out_pdfs: list[Path]) -> list[Path]:
         if d.suffix.lower() != ".docx":
             sys.stderr.write(f"docx_to_pdf.py: expected a .docx, got {d.suffix}\n")
             sys.exit(1)
+    # LibreOffice writes outputs to scratch keyed by stem; same stem from two
+    # inputs would collide. Guard against silent overwrite.
+    stems = [d.stem for d in docxs]
+    if len(set(stems)) != len(stems):
+        dupes = sorted({s for s in stems if stems.count(s) > 1})
+        sys.stderr.write(f"docx_to_pdf.py: input files share stems "
+                         f"({', '.join(dupes)}); LibreOffice would overwrite.\n"
+                         "Rename inputs or convert separately.\n")
+        sys.exit(1)
 
     # Single shared scratch dir at the first output's parent (or /tmp if mixed).
     parents = {p.parent for p in out_pdfs}

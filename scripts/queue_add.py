@@ -14,6 +14,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 REPO = Path(__file__).resolve().parent.parent
 QUEUE = REPO / "queue.jsonl"
@@ -47,6 +48,11 @@ def main() -> int:
     parser.add_argument("--company", default=None, help="company hint (optional)")
     parser.add_argument("--title", default=None, help="title hint (optional)")
     args = parser.parse_args()
+
+    parsed = urlparse(args.url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        sys.stderr.write(f"queue_add.py: not a valid http(s) URL: {args.url!r}\n")
+        return 1
 
     try:
         source, _ = detect_source(args.url)

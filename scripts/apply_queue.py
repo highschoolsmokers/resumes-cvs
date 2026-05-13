@@ -68,6 +68,26 @@ def append_jsonl(path: Path, entry: dict) -> None:
         f.write(json.dumps(entry) + "\n")
 
 
+def reset_to_main() -> bool:
+    """Ensure we're on main before invoking the next /apply.
+
+    Each /apply creates an app/<…> branch; without resetting, queue entries
+    after the first stack their branches on top of each other. Returns
+    False if main can't be checked out cleanly (uncommitted changes, etc.).
+    """
+    try:
+        r = subprocess.run(["git", "-C", str(REPO), "checkout", "main"],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            sys.stderr.write(f"apply_queue.py: `git checkout main` failed:\n"
+                             f"{r.stderr}\n")
+            return False
+    except FileNotFoundError:
+        sys.stderr.write("apply_queue.py: git not found on PATH.\n")
+        return False
+    return True
+
+
 def run_one(entry: dict, dry_run: bool) -> bool:
     """Return True on success."""
     prompt = f"/apply {entry['url']}"
@@ -76,12 +96,17 @@ def run_one(entry: dict, dry_run: bool) -> bool:
     if entry.get("title_hint"):
         prompt += f' --title "{entry["title_hint"]}"'
 
+    # `--output-format stream-json` requires `--verbose` per Claude Code.
     cmd = [CLAUDE_BIN, "-p", prompt,
            "--output-format", "stream-json",
+           "--verbose",
            "--max-turns", "30"]
     if dry_run:
         print(f"DRY: would run: {' '.join(cmd)}")
         return True
+
+    if not reset_to_main():
+        return False
 
     print(f"apply_queue.py: running {prompt}")
     try:
