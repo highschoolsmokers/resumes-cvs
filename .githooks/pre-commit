@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# pre-commit — enforce the closed-universe / no-hallucination contract.
+#
+# Spec §8.8, CLAUDE.md §0. This is the load-bearing trust mechanism: every
+# concrete claim in resume.docx / cover-letter.md / replies/<thread>.md must
+# trace to a sourced ID, and the sidecar must record it. Unsourced commits
+# never land.
+#
+# To enable, run once per clone:
+#     bash scripts/install_provenance_hook.sh
+# (which sets git config core.hooksPath .githooks)
+set -euo pipefail
+
+REPO="$(git rev-parse --show-toplevel)"
+cd "$REPO"
+
+PY="${PYTHON_BIN:-python3}"
+if [ -x ".venv/bin/python3" ]; then
+  PY=".venv/bin/python3"
+fi
+
+# 1. Provenance gate — every claim in staged sidecars must resolve.
+if ! "$PY" scripts/check_provenance.py --staged --block; then
+  echo
+  echo "Pre-commit hook: provenance check failed." >&2
+  echo "Resolve unsourced claims above, then re-stage and commit." >&2
+  exit 1
+fi
+
+# 2. Bullets schema — if bullets.yaml is staged (rare; it's gitignored on
+#    the public-template fork), lint it.
+if git diff --cached --name-only --diff-filter=AM | grep -q "^bullets\.yaml$"; then
+  if ! "$PY" scripts/lint_bullets.py; then
+    echo
+    echo "Pre-commit hook: bullets.yaml lint failed." >&2
+    exit 1
+  fi
+fi
+
+# 3. Resume style — if any resume.docx is staged, lint the geometry.
+RESUME_DOCX_STAGED="$(git diff --cached --name-only --diff-filter=AM | grep -E 'resume\.docx$' || true)"
+if [ -n "$RESUME_DOCX_STAGED" ]; then
+  while IFS= read -r docx; do
+    if ! "$PY" scripts/lint_resume.py "$docx"; then
+      echo
+      echo "Pre-commit hook: resume style lint failed on $docx." >&2
+      exit 1
+    fi
+  done <<< "$RESUME_DOCX_STAGED"
+fi
+
+exit 0
