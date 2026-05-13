@@ -17,7 +17,7 @@ from docx import Document
 REPO = Path(__file__).resolve().parent.parent
 
 SOURCES = [
-    REPO / "WSGong_Resume_Template.docx",
+    REPO / "resume-template.docx",
     REPO / "2026-04-17-wsgong-resume-generalized.docx",
     REPO / "NVIDIA" / "billy-gong-resume-2026.docx",
     REPO / "Vercel" / "WSGong_Resume_Vercel.docx",

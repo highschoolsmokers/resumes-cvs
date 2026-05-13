@@ -47,7 +47,7 @@ except ImportError:  # pragma: no cover
 
 
 REPO = Path(__file__).resolve().parent
-TEMPLATE = REPO / 'WSGong_Resume_Template.docx'
+TEMPLATE = REPO / 'resume-template.docx'
 BULLETS_YAML = REPO / 'bullets.yaml'
 DEFAULT_OUT = REPO / '2026-04-17-wsgong-resume-generalized.docx'
 
@@ -958,7 +958,7 @@ def main() -> int:
     parser.add_argument('--out', type=Path, default=None,
                         help='output .docx path (default: the generalized resume path)')
     parser.add_argument('--template', type=Path, default=TEMPLATE,
-                        help='source template docx (default: WSGong_Resume_Template.docx)')
+                        help='source template docx (default: resume-template.docx)')
     parser.add_argument('--bullets', type=Path, default=BULLETS_YAML,
                         help='bullets.yaml (default: repo root)')
     args = parser.parse_args()
