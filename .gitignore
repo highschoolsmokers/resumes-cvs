@@ -83,6 +83,9 @@ applications/_template/Anthropic/
 applications/_template/Figma/
 applications/_template/Roboflow/
 
+# Role-family plan cache — seeds for resume-tailor; derived from prior runs
+applications/_plans/
+
 # Generated generalized resume artifacts (filename includes your name)
 *-generalized.docx
 *-generalized.pdf

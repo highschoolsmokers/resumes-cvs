@@ -60,6 +60,28 @@ In the application folder:
    ```
    `unsourced_claims` MUST be an empty list. If you are about to write a sentence you can't trace to `bullets.yaml`, STOP and follow "Refusal protocol" below.
 
+## Role-family plan cache
+
+Before planning from scratch, **check for a cached plan seed** at
+`applications/_plans/<target_role_family>.yaml`. If it exists:
+
+1. Read it as your starting point — its `summary_id`, `skill_order`, and
+   baseline `bullets_by_role` are the previously-validated picks for this
+   role family.
+2. Adjust only the **delta** that the current listing demands. Add or swap
+   in bullets that match this specific JD's must-haves; reorder skills if
+   the listing emphasises something different. Don't re-plan from zero —
+   that's the cost you're saving.
+3. After you produce the final `resume-plan.yaml` and the build succeeds,
+   **write the plan back** to `applications/_plans/<target_role_family>.yaml`
+   (overwriting). The next application in this family seeds from your run.
+
+If no cached seed exists yet, plan from scratch as before and write the
+result to `applications/_plans/<target_role_family>.yaml` on the way out.
+
+The `applications/_plans/` directory is gitignored — these seeds are private
+working state, like `bullets.yaml` itself.
+
 ## The tailoring moves you are allowed to make
 
 Per spec §4.3:

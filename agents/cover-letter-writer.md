@@ -100,9 +100,26 @@ In the same application folder:
 
 ### Step 1 — Research pass (mandatory, before drafting)
 
-Populate `company-facts.md` from these sources. **Fan out all four `WebFetch`
-calls in a single message** — they're independent and parallelisable; running
-them serially is the dominant wall-clock cost of this agent.
+**First check the company-facts cache.** Before fetching anything, glob
+`applications/<Same Company>/*/company-facts.md` for sibling applications
+at the same company. If any sibling exists with mtime within the cache TTL
+(default 14 days; override via `$COMPANY_FACTS_TTL_DAYS`):
+
+1. Copy the freshest sibling into the current application folder as the
+   starting `company-facts.md`.
+2. Annotate the file with `<!-- cached from <sibling-path>, <mtime ISO date> -->`
+   at the top.
+3. Run a **delta research pass** — only re-fetch the blog/news section to
+   pick up announcements published since the cached mtime. Skip the
+   homepage, /products, /customers, /solutions fetches; those rarely
+   change inside 14 days. Append any new facts to the existing file.
+
+If no fresh cache exists, run the full research pass below.
+
+**Full research pass.** Populate `company-facts.md` from these sources.
+**Fan out all four `WebFetch` calls in a single message** — they're
+independent and parallelisable; running them serially is the dominant
+wall-clock cost of this agent.
 
 1. The company homepage (`<company_domain>/`) — named products, mission,
    leadership.

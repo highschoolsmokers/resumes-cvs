@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""Render a `.docx` file to `.pdf` via headless LibreOffice.
+"""Render one or more `.docx` files to `.pdf` via headless LibreOffice.
 
 Usage:
     python scripts/docx_to_pdf.py <input.docx> [--out <output.pdf>]
+    python scripts/docx_to_pdf.py <a.docx> <b.docx> [<c.docx> ...]   # batch
+
+Batch mode: a single `soffice` invocation converts all inputs in one cold
+start (~3-4s saved per additional file). PDFs are written as siblings of the
+inputs (foo.docx → foo.pdf). `--out` is only meaningful with a single input.
 
 Decision committed in spec §8.6 / CLAUDE.md §4: we use LibreOffice headless,
 not `docx2pdf`. Reason: `docx2pdf` shells out to Word or Pages on macOS and
@@ -55,32 +60,38 @@ def find_soffice() -> str:
     sys.exit(2)
 
 
-def convert(docx: Path, out_pdf: Path) -> Path:
-    """Invoke `soffice --headless --convert-to pdf` and move the result into place.
+def convert_batch(docxs: list[Path], out_pdfs: list[Path]) -> list[Path]:
+    """Convert a list of .docx files in a single `soffice` invocation.
 
-    LibreOffice writes the PDF next to the input with the same stem. We don't
-    get to choose the output name through CLI args, so we run it into a scratch
-    directory and rename.
+    LibreOffice writes each PDF next to the input with the same stem. We don't
+    get to choose names through CLI args, so we run into a shared scratch
+    directory and rename into place. One process, one cold start, N files.
     """
-    if not docx.exists():
-        sys.stderr.write(f"docx_to_pdf.py: input not found: {docx}\n")
-        sys.exit(1)
-    if docx.suffix.lower() != ".docx":
-        sys.stderr.write(f"docx_to_pdf.py: expected a .docx, got {docx.suffix}\n")
-        sys.exit(1)
+    if not docxs:
+        return []
+    if len(docxs) != len(out_pdfs):
+        raise ValueError("docxs and out_pdfs must be the same length")
+    for d in docxs:
+        if not d.exists():
+            sys.stderr.write(f"docx_to_pdf.py: input not found: {d}\n")
+            sys.exit(1)
+        if d.suffix.lower() != ".docx":
+            sys.stderr.write(f"docx_to_pdf.py: expected a .docx, got {d.suffix}\n")
+            sys.exit(1)
 
-    out_pdf.parent.mkdir(parents=True, exist_ok=True)
-    soffice = find_soffice()
-    scratch = out_pdf.parent / ".docx_to_pdf_scratch"
+    # Single shared scratch dir at the first output's parent (or /tmp if mixed).
+    parents = {p.parent for p in out_pdfs}
+    if len(parents) == 1:
+        scratch_root = next(iter(parents))
+    else:
+        scratch_root = Path("/tmp")
+    scratch_root.mkdir(parents=True, exist_ok=True)
+    scratch = scratch_root / ".docx_to_pdf_scratch"
     scratch.mkdir(parents=True, exist_ok=True)
 
-    cmd = [
-        soffice,
-        "--headless",
-        "--convert-to", "pdf",
-        "--outdir", str(scratch),
-        str(docx),
-    ]
+    soffice = find_soffice()
+    cmd = [soffice, "--headless", "--convert-to", "pdf", "--outdir", str(scratch)]
+    cmd.extend(str(d) for d in docxs)
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     except FileNotFoundError:
@@ -93,37 +104,57 @@ def convert(docx: Path, out_pdf: Path) -> Path:
         sys.stderr.write(result.stderr)
         sys.exit(result.returncode or 3)
 
-    produced = scratch / (docx.stem + ".pdf")
-    if not produced.exists():
-        sys.stderr.write(
-            "docx_to_pdf.py: LibreOffice ran but produced no PDF. "
-            f"Expected {produced}. stdout:\n{result.stdout}\n"
-        )
-        sys.exit(4)
+    produced_paths = []
+    for docx, out_pdf in zip(docxs, out_pdfs):
+        produced = scratch / (docx.stem + ".pdf")
+        if not produced.exists():
+            sys.stderr.write(
+                f"docx_to_pdf.py: LibreOffice ran but produced no PDF for {docx}. "
+                f"Expected {produced}. stdout:\n{result.stdout}\n"
+            )
+            sys.exit(4)
+        out_pdf.parent.mkdir(parents=True, exist_ok=True)
+        if out_pdf.exists():
+            out_pdf.unlink()
+        shutil.move(str(produced), str(out_pdf))
+        produced_paths.append(out_pdf)
 
-    if out_pdf.exists():
-        out_pdf.unlink()
-    shutil.move(str(produced), str(out_pdf))
-    # Best-effort scratch cleanup; OK if it's already gone.
     try:
         shutil.rmtree(scratch)
     except OSError:
         pass
-    return out_pdf
+    return produced_paths
+
+
+def convert(docx: Path, out_pdf: Path) -> Path:
+    """Convert a single .docx. Thin wrapper around convert_batch for back-compat."""
+    return convert_batch([docx], [out_pdf])[0]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("docx", type=Path, help="input .docx path")
+    parser.add_argument("docx", type=Path, nargs="+",
+                        help="one or more input .docx paths")
     parser.add_argument("--out", type=Path, default=None,
-                        help="output .pdf path (default: sibling of input with .pdf)")
+                        help="output .pdf path (single-input mode only; "
+                             "batch mode writes siblings)")
     args = parser.parse_args()
 
-    out = args.out or args.docx.with_suffix(".pdf")
-    pdf = convert(args.docx, out)
-    size = pdf.stat().st_size
-    print(f"PDF written → {pdf}  ({size:,} bytes)")
+    if len(args.docx) > 1 and args.out is not None:
+        sys.stderr.write("docx_to_pdf.py: --out is only valid with a single input. "
+                         "In batch mode, PDFs are written as siblings.\n")
+        return 1
+
+    if len(args.docx) == 1 and args.out is not None:
+        out_pdfs = [args.out]
+    else:
+        out_pdfs = [d.with_suffix(".pdf") for d in args.docx]
+
+    pdfs = convert_batch(args.docx, out_pdfs)
+    for pdf in pdfs:
+        size = pdf.stat().st_size
+        print(f"PDF written → {pdf}  ({size:,} bytes)")
     return 0
 
 
