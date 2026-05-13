@@ -430,7 +430,7 @@ picked_because:                              # per-bullet rationale — for the 
 
 ### 4.7 Acceptance criteria
 
-- Output docx passes the `resume_style_spec.md` checks: Raleway/Lato, #D44500 accent, 2-column, dates in left margin.
+- Output docx passes the `resume_style_spec.md` checks: Inter single family, #D44500 accent, 2-column, dates in left margin.
 - Page count = 1 for every generated file.
 - Every bullet in the output appears verbatim in `bullets.yaml`, and `resume.provenance.yaml` has a `claims[]` entry for every bullet, skill item, and summary sentence (§8.8). `unsourced_claims` is empty.
 - `scripts/check_provenance.py` passes on the application folder (warn-only in Phase 2; blocking in Phase 3+).
@@ -508,7 +508,7 @@ signature: "W.S. Gong"
    - **Bridge** — two or three evidence points from the resume that map directly to the top requirements, in the user's own earlier phrasing where possible. Every experience claim cites a `bullets.yaml` ID.
    - **Close** — what he'd want to talk about in a first conversation. No pleasantries.
 4. Emit `cover-letter.provenance.yaml` per §8.8 — every concrete noun and every experience claim mapped to `bullets.yaml`, `company-facts.md`, or `voice-corpus/`. Sentences that are pure voice/connective tissue don't need entries.
-5. Exports `cover-letter.pdf` styled to match the resume letterhead (same Raleway/Lato, same #D44500 accent, same margins) via a `build_cover_letter.py` sibling to `build_resume.py`. The PDF pass goes through `scripts/docx_to_pdf.py` — same LibreOffice-headless path as the resume.
+5. Exports `cover-letter.pdf` styled to match the resume letterhead (same Inter single family, same #D44500 accent, same margins) via a `build_cover_letter.py` sibling to `build_resume.py`. The PDF pass goes through `scripts/docx_to_pdf.py` — same LibreOffice-headless path as the resume.
 6. Commits on the application branch. The pre-commit hook blocks the commit if any concrete claim is unsourced.
 
 `resume.pdf` and `cover-letter.pdf` are the deliverables — they ship as separate files. Portals that accept two attachments get both; portals that only accept one get the resume. We do not merge the PDFs.
@@ -736,7 +736,7 @@ Every other step (searching, scoring, tailoring, tracking, archiving) runs witho
 
 ### 8.6 PDF export toolkit
 
-The spec settles on **LibreOffice headless** for DOCX → PDF because it renders the canonical Raleway/Lato/#D44500 style faithfully on macOS without requiring Microsoft Word, and because it works in CI (unlike `docx2pdf` which shells out to Word.app). The decision is committed; revisit only if a specific fidelity bug appears.
+The spec settles on **LibreOffice headless** for DOCX → PDF because it renders the canonical Inter/#D44500 style faithfully on macOS without requiring Microsoft Word, and because it works in CI (unlike `docx2pdf` which shells out to Word.app). The decision is committed; revisit only if a specific fidelity bug appears.
 
 One script lives in `scripts/`:
 

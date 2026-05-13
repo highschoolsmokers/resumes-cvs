@@ -12,7 +12,7 @@ inputs (foo.docx → foo.pdf). `--out` is only meaningful with a single input.
 Decision committed in spec §8.6 / CLAUDE.md §4: we use LibreOffice headless,
 not `docx2pdf`. Reason: `docx2pdf` shells out to Word or Pages on macOS and
 those need a GUI session; LibreOffice works from cron / scheduled tasks and
-handles our Raleway+Lato+#D44500 OOXML identically to what Word renders.
+handles our Inter/#D44500 OOXML identically to what Word renders.
 
 The Homebrew install target is:
     brew install --cask libreoffice

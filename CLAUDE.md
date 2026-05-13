@@ -125,7 +125,7 @@ Create:
 - `voice-corpus/` seeded with: `NVIDIA/nvidia-application-answers.md`, any prior cover letters the user can dig up, and 2–3 long-form samples (README excerpts, blog posts). Ask the user to drop samples here — don't invent.
 - `config/voice.yaml` per spec §5.2 (includes `scheduling_preferences` for §6.8 once Phase 4 lands).
 - `agents/cover-letter-writer.md` — prompt per spec §9.3. The agent must run a research pass that populates `applications/<…>/company-facts.md` BEFORE drafting (spec §5.3 step 1).
-- `build_cover_letter.py` — renders `cover-letter.md` → `cover-letter.pdf` with the same Raleway/Lato/#D44500 letterhead as the resume. Goes through `scripts/docx_to_pdf.py`.
+- `build_cover_letter.py` — renders `cover-letter.md` → `cover-letter.pdf` with the same Inter/#D44500 letterhead as the resume. Goes through `scripts/docx_to_pdf.py`.
 - `scripts/check_provenance.py` already knows how to validate `cover-letter.md` / `cover-letter.provenance.yaml` (Phase 2 laid the infrastructure). The Phase 3 work is installing the pre-commit hook in `--block` mode so unsourced cover-letter commits are rejected, not merely warned.
 - Extend `applications/_template/` with `company-facts.md`, `cover-letter.md`, and `cover-letter.provenance.yaml` skeletons (already present from Phase 3 kickoff — reference when starting a new application by hand).
 

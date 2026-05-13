@@ -92,9 +92,9 @@ In the same application folder:
 4. `cover-letter.docx` + `cover-letter.pdf` — rendered via
    `python build_cover_letter.py --input cover-letter.md --out cover-letter.docx`
    then `python scripts/docx_to_pdf.py cover-letter.docx`. The letterhead
-   matches the resume: same Raleway display, Lato body, #D44500 accent,
-   same margins. `resume.pdf` and `cover-letter.pdf` ship as separate
-   deliverables — we do not merge them into a combined PDF.
+   matches the resume: Inter single family, #D44500 accent, same margins
+   (see `docs/resume-style-spec.md`). `resume.pdf` and `cover-letter.pdf`
+   ship as separate deliverables — we do not merge them into a combined PDF.
 
 ## Flow
 
@@ -267,7 +267,7 @@ non-empty `unsourced_claims`, or whose `cover-letter.md` contains a
   `config/voice.yaml`. Every entry is there because it's a generic-tell.
 - **Exceed 500 words.** `build_cover_letter.py` will refuse. Keep it
   tight.
-- **Change the letterhead.** Same Raleway/Lato/#D44500 as the resume.
+- **Change the letterhead.** Inter / #D44500, matching the resume.
   `build_cover_letter.py` enforces this; do not branch.
 
 ## Refusal protocol — what to do when you can't source a claim

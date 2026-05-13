@@ -118,7 +118,7 @@ Per spec §4.3:
 - Add a new summary paragraph that isn't in `bullets.yaml summaries`. If you override `summary_text`, every proper noun in it must appear in the bullets that back it — and it must still cite a `summary:` id in the provenance file.
 - Add new skills. `skills_menu` is closed.
 - Modify `resume-template.docx`.
-- Change the accent colour (#D44500), font (Raleway display + Lato body), or layout (2-column Swiss). These are fixed by `docs/resume-style-spec.md`.
+- Change the accent colour (#D44500), font (Inter single family), or layout (2-column Swiss). These are fixed by `docs/resume-style-spec.md`.
 
 ## Refusal protocol — what to do when you can't source a claim
 

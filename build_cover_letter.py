@@ -3,7 +3,8 @@
 
 The docx output then goes through `scripts/docx_to_pdf.py` to produce the
 PDF the user attaches to applications. Typography mirrors the resume's
-Swiss style: Raleway display, Lato body, #D44500 accent.
+Swiss style: Inter single family (hierarchy via weight and size), #D44500
+accent. See `docs/resume-style-spec.md`.
 
 Input markdown format (produced by agents/cover-letter-writer.md):
 
@@ -72,8 +73,8 @@ ACCENT = RGBColor(0xD4, 0x45, 0x00)      # #D44500
 INK    = RGBColor(0x1A, 0x1A, 0x1A)      # near-black body
 MUTED  = RGBColor(0x66, 0x66, 0x66)      # subheadings, contact line
 
-DISPLAY_FONT = "Raleway"
-BODY_FONT    = "Lato"
+DISPLAY_FONT = "Inter"
+BODY_FONT    = "Inter"
 
 
 # ─── Voice config ──────────────────────────────────────────────────────
@@ -225,21 +226,21 @@ def _thin_rule(doc, color: RGBColor = ACCENT) -> None:
 
 
 def _letterhead(doc, contact: dict) -> None:
-    # Name: large Raleway, accent color.
+    # Name: large display weight, accent color.
     name_para = doc.add_paragraph()
     name_para.paragraph_format.space_before = Pt(0)
     name_para.paragraph_format.space_after = Pt(0)
     name_run = name_para.add_run(contact.get("name", "W.S. Gong"))
     _set_run_font(name_run, DISPLAY_FONT, 26, ACCENT, bold=True)
 
-    # Subhead: smaller Raleway, muted.
+    # Subhead: smaller display weight, muted.
     sub_para = doc.add_paragraph()
     sub_para.paragraph_format.space_before = Pt(0)
     sub_para.paragraph_format.space_after = Pt(2)
     sub_run = sub_para.add_run(contact.get("subhead", "Engineer, Editor, Writer"))
     _set_run_font(sub_run, DISPLAY_FONT, 11, MUTED, bold=False)
 
-    # Contact line: one paragraph, Lato small, muted.
+    # Contact line: one paragraph, small body weight, muted.
     parts = contact.get("contact_line", [
         "San Francisco, CA",
         "billygong@me.com",
@@ -301,7 +302,7 @@ def render_letter(
         section.left_margin = Inches(0.7)
         section.right_margin = Inches(0.7)
 
-    # Default Normal style → Lato 10.5 so any stray paragraph is legible.
+    # Default Normal style → Inter 10.5 so any stray paragraph is legible.
     normal = doc.styles["Normal"]
     normal.font.name = BODY_FONT
     normal.font.size = Pt(10.5)
@@ -310,7 +311,7 @@ def render_letter(
     contact = voice.get("letterhead", {}) or {}
     _letterhead(doc, contact)
 
-    # Date — right-aligned, muted Lato.
+    # Date — right-aligned, muted body weight.
     import datetime as _dt
     date_str = date_override or _dt.date.today().strftime("%B %-d, %Y") \
         if sys.platform != "win32" else (date_override or _dt.date.today().strftime("%B %d, %Y"))
