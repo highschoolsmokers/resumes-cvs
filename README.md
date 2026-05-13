@@ -11,18 +11,30 @@ bullets, no invented company facts, no guessed personal details.
   YAML plus your `bullets.yaml`. Embeds Inter into the DOCX so the PDF
   renders identically across machines.
 - **`build_cover_letter.py`** — renders a 300–400-word cover letter with
-  the same letterhead as the resume. Refuses to run if
-  `cover-letter.provenance.yaml` has unsourced claims.
-- **`scripts/lint_resume.py`** — whole-document consistency gate
-  (font, size scale, spacing on a 60-DXA baseline lattice, uniform cell
-  padding). `build_resume.py` calls it and refuses to write on drift.
-- **`scripts/check_provenance.py`** — pre-commit hook that blocks commits
-  with unsourced claims in resume or cover-letter provenance sidecars.
-- **`agents/`** — prompt files for `search-agent`, `fit-scorer`,
-  `resume-tailor`, `cover-letter-writer`, `tracker-agent`,
-  `reply-drafter`, `scheduler`.
+  the same Inter / #D44500 letterhead as the resume. Refuses to render
+  if `cover-letter.provenance.yaml` has unsourced claims.
+- **`agents/`** — prompt files: `search-agent`, `fit-scorer`,
+  `jd-analyzer`, `resume-tailor`, `cover-letter-writer`, `tracker-agent`,
+  `reply-drafter`, `scheduler`. (Archiver is in the spec; not yet implemented.)
+- **`scripts/`** — 18 deterministic drivers. Highlights:
+  - `url_ingest.py` — URL → listing.json + auto-committed branch.
+  - `docx_to_pdf.py` — headless LibreOffice (batch input supported).
+  - `check_provenance.py` — provenance gate; wired into the pre-commit hook.
+  - `lint_resume.py` / `lint_bullets.py` — whole-document Swiss consistency
+    + bullets.yaml schema lint. Both called from the pre-commit hook.
+  - `build_index.py` / `retrieve.py` — local `sentence-transformers`
+    semantic index over bullets + voice-corpus. Top-K narrows the tailor's
+    bullet pool.
+  - `queue_add.py` / `apply_queue.py` / `queue_status.py` — async apply
+    queue, drained every 30 min via `claude -p '/apply <url>'`.
+  - `bullet_outcomes.py` — joins provenance × tracker; surfaces a
+    leaderboard section in `dashboard.md`.
+  - `sweep.py` — Apple Mail tracker sweep.
+- **`.githooks/pre-commit`** — provenance gate that blocks commits with
+  unsourced claims in any staged sidecar. Install once via
+  `bash scripts/install_provenance_hook.sh`.
 - **`job-search-agent-spec.md`** — the architecture (what's being built
-  and why).
+  and why); see also `docs/spec.md` for the brief six-bucket summary.
 - **`CLAUDE.md`** — the operating playbook (how to build and run it).
 
 ## Design principles
@@ -47,14 +59,18 @@ Prerequisites (macOS — adapt for Linux):
 ```bash
 brew install --cask libreoffice font-inter
 brew install gh
-python3 -m pip install -r requirements.txt
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+bash scripts/install_provenance_hook.sh   # wire .githooks/pre-commit
 ```
+
+The last line is **required** — without it, the hallucination guard
+(`scripts/check_provenance.py --staged --block`) isn't enforced on commit.
 
 Fork + clone + rename the repo, then fill in the personal files:
 
 1. **`bullets.yaml`** — your career accomplishment database. Start from
-   the example structure; the `bullets-lookup` / `lint-bullets` scripts
-   help inventory your past resumes.
+   the example structure; the `bullets_lookup.py` / `lint_bullets.py`
+   scripts help inventory your past resumes.
 2. **`config/criteria.yaml`** — role families, title keywords, comp
    floor, company excludes. Copy from `config/criteria.example.yaml`.
 3. **`config/voice.yaml`** — cover letter tone knobs + scheduling
@@ -65,6 +81,8 @@ Fork + clone + rename the repo, then fill in the personal files:
    not commit.
 5. **`resume-template.docx`** — swap in your own contact block (name,
    city, email, website, github).
+6. Once `bullets.yaml` and `voice-corpus/` are populated, build the
+   semantic retrieval index: `python3 scripts/build_index.py`.
 
 Then:
 
@@ -78,12 +96,17 @@ From there, the typical flow is:
 Listing URL
   ↓
 search/run.py  (daily cron)   OR   scripts/url_ingest.py <url>
+                                   OR   scripts/queue_add.py <url>  (async)
   ↓
 agents/fit-scorer               → score against criteria.yaml
   ↓
-agents/resume-tailor            → plan + resume.docx + provenance
+agents/jd-analyzer              → jd-analysis.md (must-haves, etc.)
   ↓
-agents/cover-letter-writer      → company-facts.md + letter + provenance
+agents/resume-tailor       ║    → plan + resume.docx + provenance
+agents/cover-letter-writer ║    → company-facts.md + letter + provenance
+                           (parallel fan-out)
+  ↓
+.githooks/pre-commit            → provenance gate; commit blocks if unsourced
   ↓
 YOU review, YOU submit
   ↓
@@ -93,23 +116,38 @@ agents/reply-drafter            → drafts in Apple Mail for recruiter Qs
 agents/scheduler                → tentative Google Calendar holds
 ```
 
-Read `job-search-agent-spec.md` for the full architecture and `CLAUDE.md`
-for the operating playbook.
+Read `job-search-agent-spec.md` for the full architecture, `docs/spec.md`
+for the brief six-bucket summary, and `CLAUDE.md` for the operating
+playbook.
 
 ## Project layout
 
 ```
 build_resume.py              resume renderer (Swiss, Inter-embedded)
 build_cover_letter.py        cover letter renderer (same letterhead)
-scripts/                     deterministic helpers (lint, check, ingest, …)
-agents/                      prompt files for each agent
+.githooks/pre-commit         provenance gate (install via script)
+scripts/                     18 deterministic helpers
+  url_ingest.py              URL → listing + branch
+  build_index.py / retrieve.py   local semantic index
+  queue_add.py / apply_queue.py / queue_status.py   async apply queue
+  bullet_outcomes.py         provenance × tracker → leaderboard
+  sweep.py / dashboard.py    tracker sweep + dashboard regen
+  check_provenance.py / lint_bullets.py / lint_resume.py   gates
+  docx_to_pdf.py / merge_pdfs.py / extract_bullets.py / …
+  install_provenance_hook.sh / install_apply_skill.sh / …
+agents/                      prompt files (search-agent, fit-scorer,
+                             jd-analyzer, resume-tailor, cover-letter-writer,
+                             tracker-agent, reply-drafter, scheduler)
 config/
   criteria.example.yaml      role targeting
   voice.example.yaml         cover-letter tone + scheduling prefs
   personal-facts.example.yaml  recruiter-reply fact base
   sites.yaml                 public job-board URLs
 docs/
+  spec.md                    brief six-bucket spec
   resume-style-spec.md       typographic constraints
+search/                      top-of-funnel driver + runs (runs/ gitignored)
+state/                       derived semantic index + bullet-outcomes (gitignored)
 applications/_template/      skeleton for a new application folder
 resume-template.docx         pristine resume template (Inter, Swiss grid)
 job-search-agent-spec.md     architecture
@@ -118,9 +156,11 @@ CLAUDE.md                    operating playbook
 
 ## Status
 
-Extracted from a live, in-use job search. Phase 4 (tracker + replies +
-scheduling) is implemented; Phase 5 (archive + legacy migration) is
-partial. Expect edges. Issues + PRs welcome.
+Extracted from a live, in-use job search. Phases 1–4 of the original spec
+plus Phases 6–12 of post-spec sharpening (orchestration, jd-analyzer,
+caches, semantic retrieval, apply queue, bullet outcomes, pre-commit
+provenance gate) are shipped. Phase 5 (`archiver` agent) is deferred —
+archiving is currently a manual `git mv`. Expect edges. Issues + PRs welcome.
 
 ## License
 
