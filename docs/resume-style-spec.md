@@ -172,7 +172,7 @@ The resume follows five non-negotiable Swiss principles:
 ### Type family
 
 - **Inter** for everything — one family, hierarchy by weight and size. No second face. Raleway and Lato are gone.
-- Inter OTF binaries are **embedded into the DOCX** at build time so the PDF renders identically on any machine (LibreOffice, Word, macOS Preview). `build_resume.py` resolves Inter from `~/Library/Fonts` or `/Library/Fonts`; install with `brew install --cask font-inter` if missing.
+- Inter OTF binaries are **embedded into the DOCX** at build time so the PDF renders identically on any machine (LibreOffice, Word, macOS Preview). `scripts/build_resume.py` resolves Inter from `~/Library/Fonts` or `/Library/Fonts`; install with `brew install --cask font-inter` if missing.
 
 ### Accent
 
@@ -211,7 +211,7 @@ The resume follows five non-negotiable Swiss principles:
 
 ### Whole-document consistency is a *build-time assertion*
 
-The consistency rules above are not aspirational — they are enforced. `build_resume.py` calls `scripts/lint_resume.py` at the end of every render and exits non-zero if any of the following diverge across the document (not per-section — **whole-document**):
+The consistency rules above are not aspirational — they are enforced. `scripts/build_resume.py` calls `scripts/lint_resume.py` at the end of every render and exits non-zero if any of the following diverge across the document (not per-section — **whole-document**):
 
 - Fixed row heights (`<w:trHeight>`) — must not appear anywhere.
 - `tcMar.top` / `tcMar.bottom` — one value used across every content row.

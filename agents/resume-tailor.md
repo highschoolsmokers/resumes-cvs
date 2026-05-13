@@ -14,14 +14,14 @@ Read **CLAUDE.md** (especially §2 Phase 2 and §6 "What not to do") and **`job-
 - `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.md` — human-readable version (consult only when `jd-analysis.md` is ambiguous).
 - `bullets.yaml` at the repo root — the closed universe.
 - `resume-template.docx` — the Swiss style master. Do not touch it.
-- `build_resume.py` — the renderer. You drive it, you do not reimplement it.
+- `scripts/build_resume.py` — the renderer. You drive it, you do not reimplement it.
 - `config/criteria.yaml` — role-family taxonomy.
 
 ## What you must produce
 
 In the application folder:
 
-1. `resume-plan.yaml` — the plan you'll feed to `build_resume.py --plan`. Schema:
+1. `resume-plan.yaml` — the plan you'll feed to `scripts/build_resume.py --plan`. Schema:
    ```yaml
    target_role_family: developer-relations            # one of criteria.yaml role_families
    summary_id: devrel-summary-docs-platform           # id from bullets.yaml summaries
@@ -40,15 +40,15 @@ In the application folder:
    ```
 2. `resume.docx` — the rendered Swiss-style resume. Produced by:
    ```
-   python build_resume.py --plan applications/<...>/resume-plan.yaml --out applications/<...>/resume.docx
+   python scripts/build_resume.py --plan applications/<...>/resume-plan.yaml --out applications/<...>/resume.docx
    ```
 3. `resume.pdf` — via `python scripts/docx_to_pdf.py applications/<...>/resume.docx`.
-4. `resume.unpacked/` — sibling directory with the OOXML pretty-printed. `build_resume.py` writes this by default; the `/apply` skill passes `--no-unpacked` to skip it (the unpacked sibling is regeneratable and would bloat the working tree). When you run `build_resume.py` directly outside the skill, the sibling is written.
+4. `resume.unpacked/` — sibling directory with the OOXML pretty-printed. `scripts/build_resume.py` writes this by default; the `/apply` skill passes `--no-unpacked` to skip it (the unpacked sibling is regeneratable and would bloat the working tree). When you run `scripts/build_resume.py` directly outside the skill, the sibling is written.
 5. `resume.provenance.yaml` — per spec §8.8. One entry per sentence on the rendered resume, each with a `source:` key that resolves inside the closed universe:
    ```yaml
    artifact: resume.docx
    generated_at: 2026-04-20T14:30:00-07:00
-   generator: build_resume.py + resume-tailor agent
+   generator: scripts/build_resume.py + resume-tailor agent
    claims:
      - claim: "Ships production MCP servers and Claude Code plugins..."
        source: bullet:independent-mcp-servers-paperless-colophon-litverity
@@ -183,7 +183,7 @@ provenance sidecar is what makes it safe.
 
 ## Dry-run mode
 
-If invoked with `--dry-run`, produce `resume-plan.yaml` and `fit-report.md` only. Do not run `build_resume.py`. This lets the user preview plan decisions before committing to a full build.
+If invoked with `--dry-run`, produce `resume-plan.yaml` and `fit-report.md` only. Do not run `scripts/build_resume.py`. This lets the user preview plan decisions before committing to a full build.
 
 ## Commit convention
 

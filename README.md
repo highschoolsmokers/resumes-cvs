@@ -7,10 +7,10 @@ bullets, no invented company facts, no guessed personal details.
 
 ## What's in the box
 
-- **`build_resume.py`** — renders a Swiss-typography resume from a plan
+- **`scripts/build_resume.py`** — renders a Swiss-typography resume from a plan
   YAML plus your `bullets.yaml`. Embeds Inter into the DOCX so the PDF
   renders identically across machines.
-- **`build_cover_letter.py`** — renders a 300–400-word cover letter with
+- **`scripts/build_cover_letter.py`** — renders a 300–400-word cover letter with
   the same Inter / #D44500 letterhead as the resume. Refuses to render
   if `cover-letter.provenance.yaml` has unsourced claims.
 - **`agents/`** — prompt files: `search-agent`, `fit-scorer`,
@@ -87,7 +87,7 @@ Fork + clone + rename the repo, then fill in the personal files:
 Then:
 
 ```bash
-python3 build_resume.py   # regenerate your generalized resume
+python3 scripts/build_resume.py   # regenerate your generalized resume
 ```
 
 From there, the typical flow is:
@@ -123,8 +123,8 @@ playbook.
 ## Project layout
 
 ```
-build_resume.py              resume renderer (Swiss, Inter-embedded)
-build_cover_letter.py        cover letter renderer (same letterhead)
+scripts/build_resume.py              resume renderer (Swiss, Inter-embedded)
+scripts/build_cover_letter.py        cover letter renderer (same letterhead)
 .githooks/pre-commit         provenance gate (install via script)
 scripts/                     18 deterministic helpers
   url_ingest.py              URL → listing + branch

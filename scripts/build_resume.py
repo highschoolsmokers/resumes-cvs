@@ -46,7 +46,7 @@ except ImportError:  # pragma: no cover
     sys.exit(1)
 
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parent.parent  # scripts/build_resume.py → repo root
 TEMPLATE = REPO / 'resume-template.docx'
 BULLETS_YAML = REPO / 'bullets.yaml'
 DEFAULT_OUT = REPO / '2026-04-17-wsgong-resume-generalized.docx'

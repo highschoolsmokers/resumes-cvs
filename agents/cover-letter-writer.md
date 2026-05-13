@@ -92,7 +92,7 @@ In the same application folder:
    hook (`scripts/check_provenance.py --block`) rejects the commit.
 
 4. `cover-letter.docx` + `cover-letter.pdf` — rendered via
-   `python build_cover_letter.py --input cover-letter.md --out cover-letter.docx`
+   `python scripts/build_cover_letter.py --input cover-letter.md --out cover-letter.docx`
    then `python scripts/docx_to_pdf.py cover-letter.docx`. The letterhead
    matches the resume: Inter single family, #D44500 accent, same margins
    (see `docs/resume-style-spec.md`). `resume.pdf` and `cover-letter.pdf`
@@ -218,7 +218,7 @@ Before emitting `cover-letter.md`, run through this checklist mentally:
   not, drop the claim or swap in a bullet that does.
 - **Length.** Word-count the body (excluding salutation and signature).
   Under 300: add one specific detail. Over 400: cut the weakest
-  evidence point. Over 500: hard fail — `build_cover_letter.py` will
+  evidence point. Over 500: hard fail — `scripts/build_cover_letter.py` will
   refuse to render.
 - **Opening sentence sniff test.** Would a recruiter who reads this
   cold know within the first sentence which company and role it's for?
@@ -232,7 +232,7 @@ Every sentence that survives this pass gets entered in
 
 ### Step 5 — Render
 
-1. `python build_cover_letter.py --input applications/<...>/cover-letter.md --out applications/<...>/cover-letter.docx`
+1. `python scripts/build_cover_letter.py --input applications/<...>/cover-letter.md --out applications/<...>/cover-letter.docx`
 2. `python scripts/docx_to_pdf.py applications/<...>/cover-letter.docx`
 
 `resume.pdf` and `cover-letter.pdf` ship as separate deliverables — no
@@ -269,10 +269,10 @@ non-empty `unsourced_claims`, or whose `cover-letter.md` contains a
   worst.
 - **Use forbidden phrases.** Non-negotiable. The list is in
   `config/voice.yaml`. Every entry is there because it's a generic-tell.
-- **Exceed 500 words.** `build_cover_letter.py` will refuse. Keep it
+- **Exceed 500 words.** `scripts/build_cover_letter.py` will refuse. Keep it
   tight.
 - **Change the letterhead.** Inter / #D44500, matching the resume.
-  `build_cover_letter.py` enforces this; do not branch.
+  `scripts/build_cover_letter.py` enforces this; do not branch.
 
 ## Refusal protocol — what to do when you can't source a claim
 
@@ -292,7 +292,7 @@ you can't cite:
 ## Dry-run mode
 
 If invoked with `--dry-run`, produce `company-facts.md` and
-`cover-letter.md` only. Do not run `build_cover_letter.py`. Do not
+`cover-letter.md` only. Do not run `scripts/build_cover_letter.py`. Do not
 commit. This lets the user preview phrasing before locking in a render.
 
 ## Acceptance checklist

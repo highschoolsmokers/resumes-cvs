@@ -47,14 +47,14 @@ Invoke `agents/resume-tailor.md` AND `agents/cover-letter-writer.md` as **two su
 
 The resume-tailor produces, in the application folder:
 - `resume-plan.yaml` — `target_role_family`, `summary_id`, `skill_order`, `bullets_by_role`, `picked_because`.
-- `resume.docx` via `build_resume.py --plan <plan> --out <resume.docx> --no-unpacked` (skip the audit sibling during /apply for speed).
+- `resume.docx` via `scripts/build_resume.py --plan <plan> --out <resume.docx> --no-unpacked` (skip the audit sibling during /apply for speed).
 - `resume.provenance.yaml` — `unsourced_claims: []`.
 - `fit-report.md` — **only if** there are gaps to flag or unsourced claims. If everything resolves cleanly, skip the file.
 
 The cover-letter writer produces:
 - `company-facts.md` — research artefact with anchor-tagged facts.
 - `cover-letter.md` — 300–400 words, three paragraphs.
-- `cover-letter.docx` via `build_cover_letter.py`.
+- `cover-letter.docx` via `scripts/build_cover_letter.py`.
 - `cover-letter.provenance.yaml` — `unsourced_claims: []`.
 
 Guardrails (hard fails — re-plan, don't paper over):

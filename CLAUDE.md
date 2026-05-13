@@ -49,7 +49,7 @@ Nothing under these patterns may ever be committed (current `.gitignore`):
 - **Private working content (public-template repo policy):**
   - `bullets.yaml`, `config/criteria.yaml`, `config/voice.yaml`, `config/personal-facts.yaml`
   - `voice-corpus/*` except `voice-corpus/README.md`
-  - `applications/*` except `applications/_template/` (and the three empty stray dirs `_template/Anthropic`, `_template/Figma`, `_template/Roboflow`)
+  - `applications/*` except `applications/_template/`
   - `applications/_plans/` — role-family plan cache
   - `search/runs/`, `search/seen.db` and DB journals; `sweep/runs/`
   - `state/` — derived semantic index + bullet outcomes
@@ -68,13 +68,13 @@ Binary `.docx` diffs are unreadable. For the **generated resume** (where back-pr
 3. Commit both when committable. On the public-template repo, `*-generalized.unpacked/` is gitignored — the unpacked sibling is for local `git log -- applications/<…>/resume.unpacked/` audit during private use.
 4. Never edit the OOXML in the unpacked dir directly — it's output, not source.
 
-The `/apply` skill passes `--no-unpacked` to `build_resume.py` for per-application tailoring (the unpacked sibling is regeneratable and inflates the working tree). The full unpacked sibling is written when building the generalized resume.
+The `/apply` skill passes `--no-unpacked` to `scripts/build_resume.py` for per-application tailoring (the unpacked sibling is regeneratable and inflates the working tree). The full unpacked sibling is written when building the generalized resume.
 
-**Cover letters do NOT get a `.unpacked/` sibling.** `build_cover_letter.py` doesn't write one, and the back-propagation flow (`scripts/backprop_edits.py`) targets `bullets.yaml` not the letter body — there's no equivalent loop that benefits from the OOXML diff.
+**Cover letters do NOT get a `.unpacked/` sibling.** `scripts/build_cover_letter.py` doesn't write one, and the back-propagation flow (`scripts/backprop_edits.py`) targets `bullets.yaml` not the letter body — there's no equivalent loop that benefits from the OOXML diff.
 
 ### 1.6 Canonical resume style
 
-Every resume goes through `build_resume.py` operating on `resume-template.docx`. The style spec at `docs/resume-style-spec.md` is authoritative for typography. Do **not** introduce a second resume template, rewrite `build_resume.py` from scratch, or switch fonts without explicit user sign-off.
+Every resume goes through `scripts/build_resume.py` operating on `resume-template.docx`. The style spec at `docs/resume-style-spec.md` is authoritative for typography. Do **not** introduce a second resume template, rewrite `scripts/build_resume.py` from scratch, or switch fonts without explicit user sign-off.
 
 ## 2. Phased build plan
 
@@ -108,7 +108,7 @@ Goal: a listing in, a tailored `.docx` + `.pdf` out, with every claim traceable.
 Create:
 
 - `bullets.yaml` — enumerate every usable accomplishment from the existing `resume-template.docx` and the tailored resumes under `NVIDIA/`, `Vercel/`, `Handshake/`, etc. Tag each per spec §4.4. Built collaboratively with the user — the initial extraction runs through `scripts/extract_bullets.py`, then the user verifies every line. No auto-fabrication.
-- `build_resume.py` refactor: accepts `--plan <path>` and `--out <path>` flags. Plan YAML has `target_role_family`, `summary_id` / `summary_text`, `skill_order`, `bullets_by_role`, `show_projects` / `show_publications` / `show_community`, and a free-form `picked_because` block for per-bullet rationale. Without `--plan`, produces the generalised resume byte-for-byte (acceptance check).
+- `scripts/build_resume.py` refactor: accepts `--plan <path>` and `--out <path>` flags. Plan YAML has `target_role_family`, `summary_id` / `summary_text`, `skill_order`, `bullets_by_role`, `show_projects` / `show_publications` / `show_community`, and a free-form `picked_because` block for per-bullet rationale. Without `--plan`, produces the generalised resume byte-for-byte (acceptance check).
 - `agents/resume-tailor.md` — prompt per spec §9.2. Includes dry-run mode, `fit-report.md` sibling artifact, and an explicit refusal protocol (`[NEEDS SOURCE]`).
 - `scripts/extract_bullets.py` — helper to dump every DOCX bullet before hand-curation.
 - `scripts/docx_to_pdf.py` — LibreOffice-headless wrapper (decision committed in spec §8.6; do not swap to `docx2pdf`).
@@ -124,7 +124,7 @@ Acceptance:
 - `resume-tailor` against a sample listing produces a `resume.docx` whose every bullet appears verbatim in `bullets.yaml`.
 - `resume.provenance.yaml` is emitted alongside, with an entry for every bullet/skill/summary sentence and `unsourced_claims: []`.
 - Output passes the style-spec checks (font, accent color, layout).
-- Rerun with identical inputs → byte-identical `.docx` and byte-identical provenance. (`python3 build_resume.py` from a clean checkout reproduces `2026-04-17-wsgong-resume-generalized.docx` content exactly.)
+- Rerun with identical inputs → byte-identical `.docx` and byte-identical provenance. (`python3 scripts/build_resume.py` from a clean checkout reproduces `2026-04-17-wsgong-resume-generalized.docx` content exactly.)
 - The corresponding `resume.unpacked/` is committed alongside.
 - `scripts/url_ingest.py <linkedin-url>` creates a well-formed application folder and branch without touching `seen.db`.
 - `scripts/lint_bullets.py` exits 0 on the committed `bullets.yaml`.
@@ -139,7 +139,7 @@ Create:
 - `voice-corpus/` seeded with: `NVIDIA/nvidia-application-answers.md`, any prior cover letters the user can dig up, and 2–3 long-form samples (README excerpts, blog posts). Ask the user to drop samples here — don't invent.
 - `config/voice.yaml` per spec §5.2 (includes `scheduling_preferences` for §6.8 once Phase 4 lands).
 - `agents/cover-letter-writer.md` — prompt per spec §9.3. The agent must run a research pass that populates `applications/<…>/company-facts.md` BEFORE drafting (spec §5.3 step 1).
-- `build_cover_letter.py` — renders `cover-letter.md` → `cover-letter.pdf` with the same Inter/#D44500 letterhead as the resume. Goes through `scripts/docx_to_pdf.py`.
+- `scripts/build_cover_letter.py` — renders `cover-letter.md` → `cover-letter.pdf` with the same Inter/#D44500 letterhead as the resume. Goes through `scripts/docx_to_pdf.py`.
 - `scripts/check_provenance.py` already knows how to validate `cover-letter.md` / `cover-letter.provenance.yaml` (Phase 2 laid the infrastructure). The pre-commit hook in `--block` mode landed in Phase 12 (`.githooks/pre-commit`), installed via `scripts/install_provenance_hook.sh`.
 - Extend `applications/_template/` with `company-facts.md`, `cover-letter.md`, and `cover-letter.provenance.yaml` skeletons (already present from Phase 3 kickoff — reference when starting a new application by hand).
 
@@ -290,7 +290,7 @@ Mirror of spec §11 plus a resolution log of decisions taken.
 - 2026-04-18: **Notion read-only dashboard mirror** — no; `dashboard.md` only. Revisit if markdown stops feeling sufficient.
 - 2026-04-18: **`config/personal-facts.yaml` scaffolding** — scaffold only. `config/personal-facts.example.yaml` is committed with every field null; the user fills out `config/personal-facts.yaml` (gitignored) locally before the reply-drafter runs. Any unfilled field renders as `[USER TO ANSWER: …]`.
 - 2026-04-18: **Scheduling defaults** — yes, in `config/voice.yaml → scheduling_preferences`. Per-application overrides via scheduler agent inputs.
-- 2026-05-13: **Cover-letter letterhead** — matches the resume exactly (Inter / #D44500). `build_cover_letter.py` was renamed off Raleway+Lato during the audit pass; both deliverables ship in the same Swiss style.
+- 2026-05-13: **Cover-letter letterhead** — matches the resume exactly (Inter / #D44500). `scripts/build_cover_letter.py` was renamed off Raleway+Lato during the audit pass; both deliverables ship in the same Swiss style.
 - 2026-05-13: **Combined-PDF ordering** — moot. `/apply` no longer merges; resume.pdf and cover-letter.pdf ship as separate files. `scripts/merge_pdfs.py` is still on disk for the rare portal that demands a single attachment.
 - 2026-05-13: **Provenance ramp** — done. `.githooks/pre-commit` enforces `--block` mode on every commit.
 

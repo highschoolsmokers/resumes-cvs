@@ -6,7 +6,7 @@ row type. The principle: if a typographic or geometric value is set at all,
 it should be set to the same value everywhere it appears.
 
 This is the enforcement mechanism behind the user's rule: "make things look
-consistent ... not just according to section." A regression in build_resume.py
+consistent ... not just according to section." A regression in scripts/build_resume.py
 that introduces a one-off spacing value will fail this lint.
 
 Checks:

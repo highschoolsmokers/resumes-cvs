@@ -46,7 +46,7 @@ Invoke `agents/jd-analyzer.md`. Writes `applications/<…>/jd-analysis.md` (~1 K
 Invoke `agents/resume-tailor.md` AND `agents/cover-letter-writer.md` as **two subagents in one message**. Both read `jd-analysis.md` + `bullets.yaml` + the listing.
 
 The resume-tailor produces:
-- `resume-plan.yaml`, `resume.docx` (via `build_resume.py --plan <plan> --out <resume.docx> --no-unpacked`), `resume.provenance.yaml`.
+- `resume-plan.yaml`, `resume.docx` (via `scripts/build_resume.py --plan <plan> --out <resume.docx> --no-unpacked`), `resume.provenance.yaml`.
 - `fit-report.md` — **only if** there are gaps or unsourced claims; otherwise skip.
 
 The cover-letter writer produces:

@@ -26,7 +26,7 @@ Sidecar schema (YAML):
 
     artifact: resume.docx          # relative path from sidecar location
     generated_at: <iso8601>
-    generator: build_resume.py|build_cover_letter.py|reply-drafter agent
+    generator: scripts/build_resume.py|scripts/build_cover_letter.py|reply-drafter agent
     claims:
       - claim: "Ships production MCP servers..."
         source: bullet:independent-mcp-servers-paperless-colophon-litverity

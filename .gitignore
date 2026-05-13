@@ -78,11 +78,6 @@ sweep/runs/
 applications/*
 !applications/_template/
 
-# Stray app dirs that ended up under _template/ in source — never commit these
-applications/_template/Anthropic/
-applications/_template/Figma/
-applications/_template/Roboflow/
-
 # Role-family plan cache — seeds for resume-tailor; derived from prior runs
 applications/_plans/
 

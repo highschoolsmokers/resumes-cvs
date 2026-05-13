@@ -65,7 +65,7 @@ except ImportError:  # pragma: no cover
     sys.exit(1)
 
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parent.parent  # scripts/build_cover_letter.py → repo root
 VOICE_YAML = REPO / "config" / "voice.yaml"
 
 # Style constants — mirrors docs/resume-style-spec.md.

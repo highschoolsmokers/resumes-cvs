@@ -41,7 +41,7 @@ Every concrete claim emitted by the system traces to an id in a fixed inventory.
 - **Attention narrowing**: `scripts/build_index.py` builds a local `all-MiniLM-L6-v2` index over bullets + voice paragraphs into `state/embeddings.npz`. `scripts/retrieve.py --query-file <jd-analysis.md> --k 25 --source bullets` returns the focus pool the tailor consumes.
 - **Seed**: `applications/_plans/<role-family>.yaml` holds the most recent successful plan per family — the next tailor seeds from it and adjusts deltas only.
 - **Outputs (per app)**: `resume-plan.yaml`, `resume.docx`, `cover-letter.md`, `replies/<thread>.md` — each with a `.provenance.yaml` sidecar. `fit-report.md` only when there are gaps or unsourced claims.
-- **Drivers**: `build_resume.py`, `build_cover_letter.py`. **Agents**: `resume-tailor`, `cover-letter-writer`, `reply-drafter`, `scheduler`. The tailor pair fans out in parallel from the skill.
+- **Drivers**: `scripts/build_resume.py`, `scripts/build_cover_letter.py`. **Agents**: `resume-tailor`, `cover-letter-writer`, `reply-drafter`, `scheduler`. The tailor pair fans out in parallel from the skill.
 - **Guardrail**: `scripts/check_provenance.py` runs as `.githooks/pre-commit` in `--block` mode. Unsourced output writes `[NEEDS SOURCE: …]` or `[USER TO ANSWER: …]` literally instead of guessing. One-time install: `bash scripts/install_provenance_hook.sh`.
 
 ## 4 — Render: markup → distributable
@@ -49,7 +49,7 @@ Every concrete claim emitted by the system traces to an id in a fixed inventory.
 DOCX becomes PDF; the deliverables are `resume.pdf` and `cover-letter.pdf` as separate files. The `/apply` skill batches them through a single `soffice` invocation.
 
 - **Drivers**: `scripts/docx_to_pdf.py` (headless LibreOffice, accepts multiple inputs in one batch), `scripts/merge_pdfs.py` (available but unused by `/apply`).
-- **Style** enforced inline by `scripts/lint_resume.py` (called by `build_resume.py`); the pre-commit hook also runs it on any staged `resume.docx`.
+- **Style** enforced inline by `scripts/lint_resume.py` (called by `scripts/build_resume.py`); the pre-commit hook also runs it on any staged `resume.docx`.
 - **Invariant**: Swiss typography asserted at build time. Drift — wrong family, off-grid spacing, mixed em-dash weights — fails the build.
 
 ## 5 — Watch: side channel → tracked state
