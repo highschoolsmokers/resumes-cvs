@@ -17,6 +17,8 @@ Valid source kinds:
     company-fact:<anchor>     — anchor in the sibling company-facts.md
     personal-fact:<dotted.path> — dotted path in config/personal-facts.yaml
     voice:<relative-path>     — path under voice-corpus/
+                                  optionally with `:<para-idx>` suffix
+                                  (the format scripts/retrieve.py emits)
     template:<anchor>         — verbatim in resume-template.docx or
                                 listing.md (rare — accepted for JD echoes)
 
@@ -226,10 +228,14 @@ def check_sidecar(sidecar: Path, universes: dict[str, Any]) -> list[str]:
                     f"(for claim: {claim[:80]!r})"
                 )
         elif kind == "voice":
-            if value not in universes["voice_paths"]:
+            # Accept `voice:<path>` and `voice:<path>:<para-idx>` (the
+            # format scripts/retrieve.py emits). Only the path portion
+            # is validated against the on-disk voice corpus.
+            path_part = value.split(":", 1)[0]
+            if path_part not in universes["voice_paths"]:
                 errors.append(
-                    f"{sidecar}: voice:{value} not under voice-corpus/ "
-                    f"(for claim: {claim[:80]!r})"
+                    f"{sidecar}: voice:{value} — path {path_part!r} not "
+                    f"under voice-corpus/ (for claim: {claim[:80]!r})"
                 )
         elif kind == "template":
             # accepted without further validation — the template anchor scheme

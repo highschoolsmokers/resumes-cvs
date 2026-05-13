@@ -82,7 +82,9 @@ In the same application folder:
    bullet:<id>              — bullets.yaml
    summary:<id>             — bullets.yaml summaries
    company-fact:<anchor>    — company-facts.md in this folder
-   voice:<path>             — voice-corpus/<path>  (tone only, rarely cited)
+   voice:<path>[:<idx>]     — voice-corpus/<path>  (tone only, rarely cited);
+                              optional `:<para-idx>` matches what
+                              scripts/retrieve.py emits — both forms validate
    listing:<line-reference> — a direct paraphrase from listing.md
    ```
 
