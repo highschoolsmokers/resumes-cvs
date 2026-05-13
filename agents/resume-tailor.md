@@ -60,6 +60,24 @@ In the application folder:
    ```
    `unsourced_claims` MUST be an empty list. If you are about to write a sentence you can't trace to `bullets.yaml`, STOP and follow "Refusal protocol" below.
 
+## Step 0: narrow bullets via retrieval
+
+Before scanning `bullets.yaml`, narrow your candidate set with semantic retrieval:
+
+```bash
+python3 scripts/retrieve.py --query-file applications/<…>/jd-analysis.md --k 25 --source bullets
+```
+
+This returns 25 bullet IDs ranked by JD relevance. Use this list as the
+**focus pool** for `bullets_by_role`. Then open `bullets.yaml` to read the
+full `text`, `role_id`, `role_family`, and `source_doc` for each candidate
+before finalising the plan. `bullets.yaml` remains the source of truth for
+provenance and verbatim text — retrieval is only attention-narrowing.
+
+If `retrieve.py` exits non-zero (no index yet, or stale-index warning), fall
+back to a full `bullets.yaml` scan and tell the user to run
+`python3 scripts/build_index.py --rebuild` afterward.
+
 ## Role-family plan cache
 
 Before planning from scratch, **check for a cached plan seed** at

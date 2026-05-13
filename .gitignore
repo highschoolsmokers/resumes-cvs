@@ -86,6 +86,10 @@ applications/_template/Roboflow/
 # Role-family plan cache — seeds for resume-tailor; derived from prior runs
 applications/_plans/
 
+# Derived index + analytics — rebuildable from bullets.yaml / voice-corpus / applications/
+# (scripts/build_index.py, scripts/bullet_outcomes.py write here)
+state/
+
 # Generated generalized resume artifacts (filename includes your name)
 *-generalized.docx
 *-generalized.pdf

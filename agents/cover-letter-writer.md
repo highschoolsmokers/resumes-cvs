@@ -145,17 +145,29 @@ domain, and the ATS page — that's the ceiling. If the company has a
 fetch those. You are not a full research agent; you're producing a
 cover letter in a reasonable amount of time.
 
-### Step 2 — Read the tailored resume + voice corpus
+### Step 2 — Read the tailored resume + retrieve voice samples
 
 1. Extract the text of the tailored `resume.docx` (python-docx or just
    the `.unpacked/` OOXML). Skim it to remind yourself which bullets
    were selected.
-2. Read every `.md` file in `voice-corpus/`. You're calibrating sentence
-   length, vocabulary, and rhythm — not extracting quotes. Notice:
+2. **Retrieve the 5 most relevant voice passages** instead of reading the
+   whole corpus:
+
+   ```bash
+   python3 scripts/retrieve.py --query-file applications/<…>/jd-analysis.md --k 5 --source voice
+   ```
+
+   You're calibrating sentence length, vocabulary, and rhythm — not
+   extracting quotes. The retrieved passages are the ones whose subject
+   matter overlaps with this listing. Notice:
    - Does W.S. use em-dashes, or parentheticals, or nothing?
    - Does he open paragraphs with "I" or with a specific noun?
    - What's his average sentence length?
    - What's his verb palette? ("shipped", "wrote", "owned", "built"…)
+
+   If `retrieve.py` fails (no index built yet), fall back to reading every
+   `.md` in `voice-corpus/` directly and tell the user to run
+   `python3 scripts/build_index.py --rebuild` afterward.
 3. Open `config/voice.yaml` and pin `forbidden_phrases` in working
    memory. Every one of those is a tell that the draft has drifted into
    generic.

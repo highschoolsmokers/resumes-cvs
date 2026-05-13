@@ -12,6 +12,11 @@ pypdf>=4,<5                  # scripts/merge_pdfs.py
 # Phase 4 — tracker / scheduler
 python-dateutil>=2.8,<3      # scheduler time-parsing from recruiter prose
 
+# Retrieval — local semantic index over bullets.yaml + voice-corpus
+# Replaces linear-scan reads in resume-tailor + cover-letter-writer agents.
+sentence-transformers>=3,<4  # local model (~80MB at first use), no API key
+numpy>=1.26,<3               # vector ops for retrieve.py
+
 # System (not pip-installable, noted here for the install doc):
 #   brew install --cask libreoffice       # scripts/docx_to_pdf.py
 #   brew install gh                       # pre-commit + PR utilities
