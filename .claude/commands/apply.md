@@ -37,9 +37,13 @@ Inspect the resulting `listing.json`:
 - `requires_user_fill: true` (generic) — ask the user to paste the JD text.
 - Otherwise proceed.
 
-### 2. Fan out resume and cover letter in parallel
+### 2. JD analysis (shared pre-step)
 
-Invoke `agents/resume-tailor.md` AND `agents/cover-letter-writer.md` as **two subagents in one message** (single Agent tool call with both invocations). They're independent: both read `bullets.yaml` + the listing; the cover-letter agent runs its own research pass.
+Invoke `agents/jd-analyzer.md`. Writes `applications/<…>/jd-analysis.md` (~1 KB, ~5–10s) — must-haves / nice-to-haves / cultural signals / jargon / red flags. Both downstream agents consume it.
+
+### 3. Fan out resume and cover letter in parallel
+
+Invoke `agents/resume-tailor.md` AND `agents/cover-letter-writer.md` as **two subagents in one message**. Both read `jd-analysis.md` + `bullets.yaml` + the listing.
 
 The resume-tailor produces:
 - `resume-plan.yaml`, `resume.docx` (via `build_resume.py --plan <plan> --out <resume.docx> --no-unpacked`), `resume.provenance.yaml`.
@@ -50,7 +54,7 @@ The cover-letter writer produces:
 
 Guardrails: every bullet verbatim in `bullets.yaml`; no `voice.yaml → forbidden_phrases`; both provenance sidecars pass `check_provenance.py`; `lint_bullets.py` exits 0.
 
-### 3. Render both PDFs in one LibreOffice batch
+### 4. Render both PDFs in one LibreOffice batch
 
 ```
 python3 scripts/docx_to_pdf.py applications/<…>/resume.docx applications/<…>/cover-letter.docx
@@ -58,7 +62,7 @@ python3 scripts/docx_to_pdf.py applications/<…>/resume.docx applications/<…>
 
 Single `soffice` invocation produces both PDFs.
 
-### 4. Single commit + terse handoff
+### 5. Single commit + terse handoff
 
 ```
 git add applications/<…>/

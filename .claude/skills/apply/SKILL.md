@@ -37,9 +37,13 @@ Inspect the resulting `listing.json` before continuing:
 - `requires_user_fill: true` (generic, no adapter) — ask the user to paste the JD text, then populate `listing.md` / `listing.json`.
 - Otherwise proceed.
 
-### 2. Fan out resume and cover letter in parallel
+### 2. JD analysis (shared pre-step)
 
-Invoke `agents/resume-tailor.md` AND `agents/cover-letter-writer.md` as **two subagents in one message** (single Agent tool call with both invocations). They're independent — both read `bullets.yaml` + the listing; the cover-letter agent does its own research pass and doesn't need the resume to exist before it starts drafting.
+Invoke `agents/jd-analyzer.md`. It reads `listing.json` + `listing.md` and writes `applications/<…>/jd-analysis.md` with must-haves / nice-to-haves / cultural signals / jargon / red flags. Tiny output (~1 KB), ~5–10 seconds. Both downstream agents consume it so they don't each re-derive the same signals.
+
+### 3. Fan out resume and cover letter in parallel
+
+Invoke `agents/resume-tailor.md` AND `agents/cover-letter-writer.md` as **two subagents in one message** (single Agent tool call with both invocations). Both read `jd-analysis.md` + `bullets.yaml` + the listing. The cover-letter agent runs its own research pass; neither agent waits on the other.
 
 The resume-tailor produces, in the application folder:
 - `resume-plan.yaml` — `target_role_family`, `summary_id`, `skill_order`, `bullets_by_role`, `picked_because`.
@@ -60,7 +64,7 @@ Guardrails (hard fails — re-plan, don't paper over):
 - `scripts/check_provenance.py` must exit 0 against both sidecars.
 - `scripts/lint_bullets.py` must exit 0 on `bullets.yaml`.
 
-### 3. Render both PDFs in one LibreOffice batch
+### 4. Render both PDFs in one LibreOffice batch
 
 Run:
 
@@ -70,7 +74,7 @@ python3 scripts/docx_to_pdf.py applications/<…>/resume.docx applications/<…>
 
 A single `soffice` invocation produces both PDFs — saves the ~3s cold-start cost of running it twice.
 
-### 4. Single commit and hand off
+### 5. Single commit and hand off
 
 One commit covering the listing + resume + cover-letter artefacts:
 

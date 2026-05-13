@@ -9,8 +9,9 @@ Read **CLAUDE.md** (especially §2 Phase 2 and §6 "What not to do") and **`job-
 
 ## Inputs
 
+- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/jd-analysis.md` — **read this first.** Must-haves, nice-to-haves, jargon. Produced by `agents/jd-analyzer.md` upstream; both you and the cover-letter writer share it so you don't independently re-derive the same signals.
 - `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.json` — normalised listing per spec §3.4.
-- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.md` — human-readable version.
+- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.md` — human-readable version (consult only when `jd-analysis.md` is ambiguous).
 - `bullets.yaml` at the repo root — the closed universe.
 - `resume-template.docx` — the Swiss style master. Do not touch it.
 - `build_resume.py` — the renderer. You drive it, you do not reimplement it.

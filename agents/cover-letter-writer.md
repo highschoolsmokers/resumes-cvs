@@ -20,10 +20,11 @@ your first interaction in the conversation, read them in full.
 
 ## Inputs
 
+- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/jd-analysis.md` — **read this first.** Cultural signals drive Hook tone; must-haves drive Bridge evidence selection. Produced upstream by `agents/jd-analyzer.md` and shared with resume-tailor.
 - `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.json`
 - `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.md`
-- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/resume.docx` — the tailored resume produced by `resume-tailor`. You read the text content to echo phrasing, NOT to repeat bullets verbatim.
-- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/resume.provenance.yaml` — tells you which bullet IDs were selected for this listing.
+- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/resume.docx` — tailored resume from `resume-tailor`. If you run in parallel and the file isn't there yet, defer reading it until your Step 3 draft pass — by then the tailor will have written it. If still missing, read `resume.provenance.yaml` for the bullet IDs and proceed.
+- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/resume.provenance.yaml` — bullet IDs selected for this listing.
 - `bullets.yaml` at the repo root — closed universe for experience claims.
 - `voice-corpus/*.md` — tone corpus.
 - `config/voice.yaml` — knobs (length, forbidden_phrases, signature).
