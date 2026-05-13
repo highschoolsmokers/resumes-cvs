@@ -21,7 +21,7 @@ If any of those files is missing, stop and tell the user — the repo isn't set 
 
 ## Steps
 
-### 1. Ingest the listing
+### 1. Ingest the listing (auto-commits the listing on the app branch)
 
 Run:
 
@@ -29,72 +29,63 @@ Run:
 python3 scripts/url_ingest.py <URL> [--company "<Name>"] [--title "<Role Title>"]
 ```
 
-This creates `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.json` + `listing.md`, and prints the git commands to create the application branch (it cannot touch `.git/` from inside the sandbox).
+The default `--commit` flag creates the `app/<Company>-<role-slug>-<YYYY-MM-DD>` branch and commits `listing.json` + `listing.md` in one step. (Pass `--no-commit` only if you're in a sandbox without a writable `.git/`.)
 
 Inspect the resulting `listing.json` before continuing:
 
-- If `requires_chrome_mcp: true` (LinkedIn URLs) — use `mcp__Claude_in_Chrome__*` to fetch the JD body, then replace the stub listing fields with the real ones. If the Chrome extension isn't connected, stop and ask the user to install it.
-- If `requires_user_fill: true` (generic URLs where no adapter matched) — ask the user to paste the JD text, then populate `listing.md` / `listing.json` accordingly.
+- `requires_chrome_mcp: true` (LinkedIn) — use `mcp__Claude_in_Chrome__*` to fetch the JD body, then replace the stub listing fields. If the Chrome extension isn't connected, stop and ask the user to install it.
+- `requires_user_fill: true` (generic, no adapter) — ask the user to paste the JD text, then populate `listing.md` / `listing.json`.
 - Otherwise proceed.
 
-### 2. Create the application branch on the user's machine
+### 2. Fan out resume and cover letter in parallel
 
-`url_ingest.py` printed the git commands. Surface them to the user verbatim so they can run them locally (the sandbox can't write to `.git/`):
+Invoke `agents/resume-tailor.md` AND `agents/cover-letter-writer.md` as **two subagents in one message** (single Agent tool call with both invocations). They're independent — both read `bullets.yaml` + the listing; the cover-letter agent does its own research pass and doesn't need the resume to exist before it starts drafting.
 
-```
-git checkout -b app/<Company>-<role-slug>-<YYYY-MM-DD>
-git add applications/<Company>/<role-slug>-<YYYY-MM-DD>/
-git commit -m "url-ingest: <Company> <Role Title> listing"
-```
+The resume-tailor produces, in the application folder:
+- `resume-plan.yaml` — `target_role_family`, `summary_id`, `skill_order`, `bullets_by_role`, `picked_because`.
+- `resume.docx` via `build_resume.py --plan <plan> --out <resume.docx> --no-unpacked` (skip the audit sibling during /apply for speed).
+- `resume.provenance.yaml` — `unsourced_claims: []`.
+- `fit-report.md` — **only if** there are gaps to flag or unsourced claims. If everything resolves cleanly, skip the file.
 
-Do not proceed further until the user confirms they're on the app branch (or says "I'll do the git part later, keep going").
-
-### 3. Tailor the resume
-
-Invoke `agents/resume-tailor.md`. It:
-
-1. Reads `bullets.yaml` (closed universe) and the listing.
-2. Writes `resume-plan.yaml` with `target_role_family`, `summary_id`, `skill_order`, `bullets_by_role`, `picked_because`.
-3. Runs `build_resume.py --plan <plan> --out <resume.docx>`.
-4. Runs `scripts/docx_to_pdf.py` to produce `resume.pdf`.
-5. Writes `resume.provenance.yaml` with one entry per bullet / skill / summary sentence and `unsourced_claims: []`.
-6. Writes `fit-report.md` naming every gap explicitly (no glossing over missing skills).
+The cover-letter writer produces:
+- `company-facts.md` — research artefact with anchor-tagged facts.
+- `cover-letter.md` — 300–400 words, three paragraphs.
+- `cover-letter.docx` via `build_cover_letter.py`.
+- `cover-letter.provenance.yaml` — `unsourced_claims: []`.
 
 Guardrails (hard fails — re-plan, don't paper over):
 
-- Every bullet on the rendered resume must appear verbatim in `bullets.yaml`. If a gap would require a bullet you don't have, leave it out — never invent.
-- `scripts/check_provenance.py applications/<…>/resume.provenance.yaml --block` must exit 0.
-- `scripts/lint_bullets.py` must exit 0 on the committed `bullets.yaml`.
+- Every bullet on the resume must appear verbatim in `bullets.yaml`. Gap → leave it out; never invent.
+- No `config/voice.yaml → forbidden_phrases` in the cover letter.
+- `scripts/check_provenance.py` must exit 0 against both sidecars.
+- `scripts/lint_bullets.py` must exit 0 on `bullets.yaml`.
 
-### 4. Write the cover letter
+### 3. Render both PDFs in one LibreOffice batch
 
-Invoke `agents/cover-letter-writer.md`. It runs a research pass FIRST (homepage / products / customers / 6mo of blog) and writes `company-facts.md` with anchor-tagged sections. Every concrete noun in the letter body must cite an anchor.
+Run:
 
-Outputs in the application folder:
+```
+python3 scripts/docx_to_pdf.py applications/<…>/resume.docx applications/<…>/cover-letter.docx
+```
 
-- `company-facts.md` — research artefact.
-- `cover-letter.md` — markdown source.
-- `cover-letter.docx` via `build_cover_letter.py`, then `cover-letter.pdf` via `scripts/docx_to_pdf.py`.
-- `cover-letter.provenance.yaml` — every concrete claim sourced; `unsourced_claims: []`.
+A single `soffice` invocation produces both PDFs — saves the ~3s cold-start cost of running it twice.
 
-Length target: 300–400 words. Hard fail > 500. No `config/voice.yaml → forbidden_phrases`.
+### 4. Single commit and hand off
 
-### 5. Hand off to the user
+One commit covering the listing + resume + cover-letter artefacts:
 
-Present `resume.pdf` and `cover-letter.pdf` as separate file links (using `computer://` links to the workspace folder) — do NOT merge them. Include a short summary:
+```
+git add applications/<…>/
+git commit -m "apply: <Company> <Role>"
+```
 
-- Title + company + role family classification.
-- Three-line fit summary pulled from `fit-report.md`.
-- Any `[NEEDS SOURCE:…]` placeholders left in the plan (should be zero for ship-ready output; surface if not).
-- Any gaps flagged in `fit-report.md` that the user should decide whether to address.
-- The git commit commands for `resume*`, `company-facts.md`, and `cover-letter*` — per `CLAUDE.md §1.2` one logical unit per commit, which for this flow typically means:
+Present `resume.pdf` and `cover-letter.pdf` as separate file links. Keep the handoff terse:
+- One-line fit headline (role + family + the strongest match).
+- Links to the two PDFs.
+- If `fit-report.md` exists, flag the gaps — otherwise skip.
+- If any `[NEEDS SOURCE:…]` placeholder remains, surface it (should be zero for ship-ready output).
 
-  ```
-  resume-tailor: build resume.docx + plan + provenance for <Company> <Role>
-  cover-letter-writer: draft cover letter + company-facts.md for <Company> <Role>
-  ```
-
-Then STOP. The user reviews the two PDFs, decides whether to submit, and tells you "submitted" afterward — at which point you'll lay down a `tracker.yaml` with `status: applied` and the tracker-agent takes over from there.
+Then STOP. The user reviews and submits via the portal; they'll tell you "submitted" afterward — at which point you'll lay down a `tracker.yaml` and the tracker-agent takes over.
 
 ## What this skill does NOT do
 

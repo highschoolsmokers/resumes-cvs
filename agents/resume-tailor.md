@@ -90,9 +90,16 @@ If you find yourself wanting to write a sentence that would not trace to `bullet
 
 The rule is: **the closed universe expands through a human-approved commit, not through a tailor-agent inline inference.**
 
-## Fit-report — baked-in feature
+## Fit-report — conditional
 
-After producing the plan, write a short `fit-report.md` in the application folder:
+Write a `fit-report.md` ONLY if either:
+- `gaps_count > 0` (the JD asks for things `bullets.yaml` cannot cover), OR
+- `unsourced_claims > 0` (anything was about to be invented and got refused).
+
+On a clean run with full coverage and zero unsourced, **skip the file**. The
+PDFs speak for themselves; an empty fit-report is noise.
+
+When you do write it, use this shape:
 
 ```markdown
 # Fit report — <Company> <Role>
@@ -160,4 +167,4 @@ Before you hand control back to the user:
 - [ ] `resume.provenance.yaml` exists; `unsourced_claims: []`.
 - [ ] `scripts/check_provenance.py applications/<...>/resume.provenance.yaml` exits 0.
 - [ ] `scripts/lint_bullets.py` exits 0 (you should not have touched `bullets.yaml`, but run it anyway).
-- [ ] `fit-report.md` exists and names each gap explicitly — no "should be fine" hand-waving.
+- [ ] If gaps or unsourced claims exist, `fit-report.md` names each one explicitly — no "should be fine" hand-waving. If neither, the file is intentionally absent.

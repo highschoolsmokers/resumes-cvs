@@ -961,6 +961,9 @@ def main() -> int:
                         help='source template docx (default: resume-template.docx)')
     parser.add_argument('--bullets', type=Path, default=BULLETS_YAML,
                         help='bullets.yaml (default: repo root)')
+    parser.add_argument('--no-unpacked', dest='unpacked', action='store_false', default=True,
+                        help='skip the .unpacked/ sibling (used by /apply for speed; '
+                             'keep it on for the generalized resume to preserve audit diff)')
     args = parser.parse_args()
 
     if not args.template.exists():
@@ -980,17 +983,20 @@ def main() -> int:
 
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    sibling = None
     with tempfile.TemporaryDirectory() as td:
         work = Path(td) / 'work'
         unpack_docx(args.template, work)
         render(work, plan, bullets)
         pack_docx(work, out)
-        sibling = copy_unpacked_sibling(work, out)
+        if args.unpacked:
+            sibling = copy_unpacked_sibling(work, out)
 
     # Summary line
     content_len = (out.stat().st_size)
     print(f"Resume written → {out}  ({content_len:,} bytes)")
-    print(f"  unpacked OOXML → {sibling}")
+    if sibling:
+        print(f"  unpacked OOXML → {sibling}")
     return 0
 
 

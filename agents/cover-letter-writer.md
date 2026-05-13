@@ -99,19 +99,20 @@ In the same application folder:
 
 ### Step 1 — Research pass (mandatory, before drafting)
 
-Populate `company-facts.md` from these sources, in order, fetching via
-WebFetch:
+Populate `company-facts.md` from these sources. **Fan out all four `WebFetch`
+calls in a single message** — they're independent and parallelisable; running
+them serially is the dominant wall-clock cost of this agent.
 
-1. The JD itself — the "About the company" blurb, any named products,
-   stated customer lists. Cite `listing:<heading>` for these.
-2. The company homepage (`<company_domain>/`) — named products, stated
-   mission, leadership team.
-3. `<company_domain>/products`, `/customers`, `/solutions` — whichever
-   of these exist.
-4. The last six months of `<company_domain>/blog` or `/news` — recent
-   announcements, launches, funding events.
-5. If the listing.json has a parent ATS (Greenhouse/Lever/Ashby), the
-   ATS page often has a second company blurb — add facts from there too.
+1. The company homepage (`<company_domain>/`) — named products, mission,
+   leadership.
+2. `<company_domain>/products`, `/customers`, `/solutions` — whichever exist.
+3. The last six months of `<company_domain>/blog` or `/news` — announcements,
+   launches, funding.
+4. If the listing has a parent ATS (Greenhouse/Lever/Ashby), the ATS page's
+   company blurb.
+
+(The JD itself is already in `listing.md` — cite `listing:<heading>` directly
+from memory; don't re-fetch.)
 
 **Defensible floor.** At minimum, `company-facts.md` must contain one
 concrete fact you can cite in the hook paragraph. If your research pass

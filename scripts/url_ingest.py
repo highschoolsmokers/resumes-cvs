@@ -40,6 +40,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -332,6 +333,11 @@ def main() -> int:
                         help="override role title")
     parser.add_argument("--from-stdin", action="store_true",
                         help="read JD text from stdin (pairs with --company/--title)")
+    parser.add_argument("--commit", dest="commit", action="store_true", default=True,
+                        help="create the app/* branch and commit the listing folder (default; "
+                             "requires a writable .git/, i.e. local Claude Code, not Cowork)")
+    parser.add_argument("--no-commit", dest="commit", action="store_false",
+                        help="skip the branch+commit; just print the git commands (Cowork-safe)")
     args = parser.parse_args()
 
     if args.from_stdin:
@@ -376,14 +382,44 @@ def main() -> int:
 
     folder = write_application(listing)
     branch = branch_name(folder)
+    rel = folder.relative_to(REPO)
+    commit_msg = f'url-ingest: add listing for {listing.get("company")} — {listing.get("title")}'
 
-    print(f"Application folder: {folder.relative_to(REPO)}")
+    print(f"Application folder: {rel}")
     print(f"Proposed branch:    {branch}")
-    print()
-    print("Next steps (run locally — the sandbox cannot touch .git):")
-    print(f"  git checkout -b {branch}")
-    print(f"  git add {folder.relative_to(REPO)}")
-    print(f'  git commit -m "url-ingest: add listing for {listing.get("company")} — {listing.get("title")}"')
+
+    if args.commit:
+        try:
+            subprocess.run(["git", "rev-parse", "--git-dir"], check=True,
+                           cwd=str(REPO), capture_output=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            sys.stderr.write("url_ingest.py: --commit set but no writable .git/ found; "
+                             "falling back to print-only.\n")
+            args.commit = False
+
+    if args.commit:
+        for cmd in (
+            ["git", "-C", str(REPO), "checkout", "-b", branch],
+            ["git", "-C", str(REPO), "add", str(rel)],
+            ["git", "-C", str(REPO), "commit", "-m", commit_msg],
+        ):
+            r = subprocess.run(cmd, capture_output=True, text=True)
+            if r.returncode != 0:
+                sys.stderr.write(f"url_ingest.py: `{' '.join(cmd[2:])}` exited {r.returncode}\n")
+                sys.stderr.write(r.stdout + r.stderr)
+                sys.stderr.write("\nFalling back to manual git commands below.\n")
+                args.commit = False
+                break
+        if args.commit:
+            print(f"Branched + committed: {branch}")
+
+    if not args.commit:
+        print()
+        print("Next steps (run locally — pass --commit to do this automatically):")
+        print(f"  git checkout -b {branch}")
+        print(f"  git add {rel}")
+        print(f'  git commit -m "{commit_msg}"')
+
     if listing.get("requires_chrome_mcp"):
         print()
         print("  NOTE: this LinkedIn listing is a stub. "
