@@ -12,8 +12,8 @@ bullets, resume, agents) on every commit. Install once per clone:
 
 | Script | Purpose |
 | ------ | ------- |
-| `build_resume.py` | Render `resume.docx` from a plan + `bullets.yaml`. `--no-unpacked` skips the OOXML sibling (used by `/apply`); calls `lint_resume.py` inline. |
-| `build_cover_letter.py` | Render `cover-letter.docx` from `cover-letter.md`. Refuses on `[NEEDS SOURCE: …]` or word-count overrun. |
+| `scripts/build_resume.py` | Render `resume.docx` from a plan + `bullets.yaml`. `--no-unpacked` skips the OOXML sibling (used by `/apply`); calls `lint_resume.py` inline. |
+| `scripts/build_cover_letter.py` | Render `cover-letter.docx` from `cover-letter.md`. Refuses on `[NEEDS SOURCE: …]` or word-count overrun. |
 | `docx_to_pdf.py` | Headless LibreOffice; accepts multiple inputs in one batch (saves the cold-start cost). |
 | `merge_pdfs.py` | `pypdf` combine into `combined.pdf`. Not used by `/apply` (resume + cover ship as separate files); kept for portals that demand a single attachment. |
 
