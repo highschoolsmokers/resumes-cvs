@@ -67,7 +67,7 @@ Rules:
 
 - Use the thread's subject + snippet. If both are ambiguous, read the full thread via `mcp__Control_your_Mac__osascript` before classifying. Do not guess.
 - A thread can only transition forward: `applied → screened → interviewing → offer`. You never promote to `offer` without an explicit offer signal. You never demote — if a thread reads like a rejection but the status is already `interviewing`, still append to `status_history` (the history is the audit trail), but do not silently revert it. Surface the apparent regression to the user.
-- `screen-request` promotes `applied → screened`. `scheduling` inside an existing `screened` thread promotes `screened → interviewing` ONLY if the scheduler confirms the slot is for an actual interview (not a pre-screen chat).
+- `screen-request` promotes `applied → screened`. The **first** `scheduling` thread on a `screened` application stays at `screened` (the slot being booked is the screen itself). A **subsequent** `scheduling` thread promotes `screened → interviewing` — by then the screen is in the past and any new slot is by definition for a real interview round. If you're not sure, leave status alone and let the next sweep make the call.
 
 ### Step 3 — Move the message into `JobSearch/<Company>`
 

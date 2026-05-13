@@ -67,3 +67,11 @@ search/runs/<YYYY-MM-DD-HHMM>/
 ```
 
 The `fit-scorer` agent consumes `listings.jsonl` and produces `scored.jsonl` + `summary.md` in the same folder.
+
+## Acceptance checklist
+
+- [ ] `search/runs/<timestamp>/listings.jsonl` exists with ≥ 1 row from a successful adapter.
+- [ ] Every row is valid JSON, has `id`, `source`, `source_url`, `company`, `title`, `description_md`.
+- [ ] Reruns within 24h produce zero new rows (everything was in `seen.db`).
+- [ ] `errors.log` exists only if at least one adapter failed; the run still completes when others succeed.
+- [ ] No file is committed under `search/runs/<…>/raw/` (gitignored).

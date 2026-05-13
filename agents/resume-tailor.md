@@ -43,7 +43,7 @@ In the application folder:
    python build_resume.py --plan applications/<...>/resume-plan.yaml --out applications/<...>/resume.docx
    ```
 3. `resume.pdf` — via `python scripts/docx_to_pdf.py applications/<...>/resume.docx`.
-4. `resume.unpacked/` — sibling directory with the OOXML pretty-printed; `build_resume.py` writes this automatically.
+4. `resume.unpacked/` — sibling directory with the OOXML pretty-printed. `build_resume.py` writes this by default; the `/apply` skill passes `--no-unpacked` to skip it (the unpacked sibling is regeneratable and would bloat the working tree). When you run `build_resume.py` directly outside the skill, the sibling is written.
 5. `resume.provenance.yaml` — per spec §8.8. One entry per sentence on the rendered resume, each with a `source:` key that resolves inside the closed universe:
    ```yaml
    artifact: resume.docx
@@ -204,7 +204,7 @@ Before you hand control back to the user:
 - [ ] `resume-plan.yaml` exists and every ID in it resolves in `bullets.yaml`.
 - [ ] `resume.docx` built successfully.
 - [ ] `resume.pdf` rendered successfully.
-- [ ] `resume.unpacked/` sibling is present.
+- [ ] `resume.unpacked/` sibling is present (skip when run under `/apply` with `--no-unpacked`).
 - [ ] `resume.provenance.yaml` exists; `unsourced_claims: []`.
 - [ ] `scripts/check_provenance.py applications/<...>/resume.provenance.yaml` exits 0.
 - [ ] `scripts/lint_bullets.py` exits 0 (you should not have touched `bullets.yaml`, but run it anyway).

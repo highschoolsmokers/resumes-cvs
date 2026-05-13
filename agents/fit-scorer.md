@@ -73,3 +73,11 @@ Group `yes` rows by company, companies sorted by their top score, within a compa
 - Never invent fit. If `description_md` is empty or the listing looks malformed, score it low and note it in the rationale.
 - Be honest about uncertainty. "Probably not DX-focused, hard to tell from the JD" is a fine qualitative.
 - Do not modify `listings.jsonl` or `seen.db`. You are read-only on the search agent's output.
+
+## Acceptance checklist
+
+- [ ] `scored.jsonl` exists with one line per input listing (no drops).
+- [ ] Every row has `score` (int in [0, 100]), `recommend` (one of yes/maybe/no), and `rationale`.
+- [ ] `summary.md` exists and groups `yes` rows by company.
+- [ ] Hard rejects (`title_keywords_exclude` / `company_exclude` hits) get `score=0`, `recommend=no`, and a rationale that names the reason.
+- [ ] `listings.jsonl` and `seen.db` are unchanged.
