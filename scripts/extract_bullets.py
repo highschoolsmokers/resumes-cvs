@@ -16,16 +16,27 @@ from docx import Document
 
 REPO = Path(__file__).resolve().parent.parent
 
-SOURCES = [
-    REPO / "resume-template.docx",
-    REPO / "2026-04-17-wsgong-resume-generalized.docx",
-    REPO / "NVIDIA" / "billy-gong-resume-2026.docx",
-    REPO / "Vercel" / "WSGong_Resume_Vercel.docx",
-    REPO / "Handshake" / "WSGong_Resume_AdversarialAI.docx",
-    REPO / "APublicSpace" / "WSGong_Resume_APublicSpace.docx",
-    REPO / "MarineLayer" / "WSGong_Resume_MarineLayer.docx",
-    REPO / "SFMOMA" / "WSGong_Resume_SFMOMA.docx",
-]
+
+def collect_sources() -> list[Path]:
+    """Discover resume DOCX inputs at runtime.
+
+    Hardcoding paths (NVIDIA/, Vercel/, etc.) went stale after CLAUDE.md §10
+    Phase 5 moved legacy company folders under applications/. Glob instead.
+    """
+    out: list[Path] = [REPO / "resume-template.docx"]
+    # Generalized resume (date-prefixed filenames at the root).
+    out.extend(sorted(REPO.glob("*-wsgong-resume-generalized.docx")))
+    apps = REPO / "applications"
+    if apps.exists():
+        # Tailored resumes per application — skip the _template skeleton.
+        for pattern in ("resume.docx",
+                        "WSGong_Resume_*.docx",
+                        "billy-gong-resume-*.docx"):
+            for path in sorted(apps.rglob(pattern)):
+                if "_template" in path.parts:
+                    continue
+                out.append(path)
+    return out
 
 
 def iter_text(doc: Document):
@@ -65,7 +76,11 @@ def dump(path: Path) -> None:
 
 
 def main() -> int:
-    for path in SOURCES:
+    sources = collect_sources()
+    if not sources:
+        print("extract_bullets.py: no DOCX sources discovered.")
+        return 1
+    for path in sources:
         dump(path)
     return 0
 
