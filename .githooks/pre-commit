@@ -49,4 +49,14 @@ if [ -n "$RESUME_DOCX_STAGED" ]; then
   done <<< "$RESUME_DOCX_STAGED"
 fi
 
+# 4. Agent drift — if any agents/*.md is staged, lint for broken refs,
+#    opaque MCP IDs, missing frontmatter, etc.
+if git diff --cached --name-only --diff-filter=AM | grep -qE '^agents/.*\.md$'; then
+  if ! "$PY" scripts/lint_agents.py --staged; then
+    echo
+    echo "Pre-commit hook: agent prompt lint failed." >&2
+    exit 1
+  fi
+fi
+
 exit 0

@@ -12,7 +12,7 @@ Read **CLAUDE.md §2 Phase 4, §5, §6** and **`job-search-agent-spec.md` §§6.
 - The thread via Apple Mail AppleScript (`mcp__Control_your_Mac__osascript`): subject, body, sender, `Message-Id`, any ICS attachment or Calendly link.
 - `applications/<Company>/<role-slug>-<YYYY-MM-DD>/tracker.yaml` — `company`, `role`, `contact.recruiter`.
 - `config/voice.yaml → scheduling_preferences` — timezone, day window, preferred blocks, excluded weekdays, buffer minutes, `tentative_title_template`, `known_stages`, `auto_book_calendly` (always false — the agent must respect this).
-- Google Calendar MCP (`mcp__8cb1832e-5c3e-45d7-a416-7920a5827a02__*`) for reading the user's calendar and creating events.
+- The Google Calendar MCP (tool names start with `mcp__google_calendar__` — the actual session prefix may differ; resolve at runtime by listing connected MCPs) for reading the user's calendar and creating events.
 
 ## What you must produce
 
@@ -56,7 +56,7 @@ In the application folder:
    ```
 2. Up to three **tentative** Google Calendar events, one per `candidate_slots[*]`. Created via:
    ```
-   mcp__8cb1832e-5c3e-45d7-a416-7920a5827a02__create_event
+   mcp__google_calendar__create_event
    ```
    - Title: rendered from `voice.yaml → scheduling_preferences.tentative_title_template` — e.g. `[TENTATIVE] Vercel — Content Engineer — Recruiter Call`.
    - Description: a link back to the application folder and the `message://` thread URL. Plain text, no HTML.
@@ -100,8 +100,8 @@ Do **not** click through. Do **not** claim a time was booked.
 
 Use the Google Calendar MCP:
 
-- `mcp__8cb1832e-5c3e-45d7-a416-7920a5827a02__list_calendars` — find the primary calendar (and any work calendar the user has authorized).
-- `mcp__8cb1832e-5c3e-45d7-a416-7920a5827a02__list_events` — query over the candidate window: today → `scheduling_preferences.window_business_days` business days out. Use `day_start` and `day_end` as the daily window, and honor `excluded_weekdays` (default: no Sat/Sun).
+- `mcp__google_calendar__list_calendars` — find the primary calendar (and any work calendar the user has authorized).
+- `mcp__google_calendar__list_events` — query over the candidate window: today → `scheduling_preferences.window_business_days` business days out. Use `day_start` and `day_end` as the daily window, and honor `excluded_weekdays` (default: no Sat/Sun).
 
 If the recruiter offered explicit slots, check each one for conflicts against the returned events (treat any event marked `busy` / non-free as a conflict; transparent / `free` events don't block).
 

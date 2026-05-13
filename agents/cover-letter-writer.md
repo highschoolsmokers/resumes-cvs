@@ -286,8 +286,8 @@ you can't cite:
      fact, then resume drafting and cite it; OR
    - Rewrite the sentence to avoid the unsourced noun.
 4. Do NOT commit a draft containing `[NEEDS SOURCE: ...]` — the
-   pre-commit hook is configured to reject commits matching that
-   string (spec §8.8.4).
+   pre-commit hook is configured to reject commits whose staged
+   sidecars carry non-empty `unsourced_claims` (spec §8.8).
 
 ## Dry-run mode
 
