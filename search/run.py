@@ -487,7 +487,7 @@ def write_summary(run_dir: Path, scored: list[dict]) -> None:
 # ---------------------------------------------------------------------------
 
 def load_yaml(path: Path) -> Any:
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

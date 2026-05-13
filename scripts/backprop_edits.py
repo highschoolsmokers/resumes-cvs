@@ -50,7 +50,7 @@ BULLETS_YAML = REPO / "bullets.yaml"
 
 
 def load_bullets() -> dict:
-    with BULLETS_YAML.open() as f:
+    with BULLETS_YAML.open(encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -110,7 +110,7 @@ def load_provenance(app_folder: Path) -> dict:
             "Can't map rendered bullets to source IDs.\n"
         )
         sys.exit(1)
-    with sidecar.open() as f:
+    with sidecar.open(encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

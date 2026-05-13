@@ -83,7 +83,7 @@ def load_voice(path: Path = VOICE_YAML) -> dict:
     if not path.exists():
         sys.stderr.write(f"build_cover_letter.py: missing {path}\n")
         sys.exit(2)
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

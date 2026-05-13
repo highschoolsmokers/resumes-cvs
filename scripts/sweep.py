@@ -79,14 +79,14 @@ RECRUITER_ATS_DOMAINS = (
 def _load_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -163,11 +163,16 @@ def _applescript_fetch(
     """
     sender_filter = _applescript_sender_filter(domains)
 
-    # Parse since_iso into "mm/dd/yyyy hh:mm:ss"; AppleScript's `date`
-    # constructor accepts US-locale date strings and is timezone-naive.
-    # We rely on the user's Mail.app being in the same tz as the script.
+    # Parse since_iso into "mm/dd/yyyy hh:mm:ss" for AppleScript's `date`
+    # constructor, which is timezone-naive and interprets the string in the
+    # user's local tz. Convert to local BEFORE stringifying so a UTC-suffixed
+    # `since_iso` doesn't slip through 8 hours off across DST or for
+    # non-Pacific users.
     since_dt = dt.datetime.fromisoformat(since_iso.replace("Z", "+00:00"))
-    as_date = since_dt.strftime("%m/%d/%Y %H:%M:%S")
+    if since_dt.tzinfo is None:
+        since_dt = since_dt.replace(tzinfo=dt.timezone.utc)
+    since_local = since_dt.astimezone()
+    as_date = since_local.strftime("%m/%d/%Y %H:%M:%S")
 
     if mailbox_path is None:
         mailbox_expr = "inbox"

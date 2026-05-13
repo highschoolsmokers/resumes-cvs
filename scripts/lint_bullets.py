@@ -59,7 +59,7 @@ def load_role_families() -> set[str]:
     """Prefer criteria.yaml; fall back to the known canonical set."""
     if not CRITERIA_YAML.exists():
         return set(FALLBACK_FAMILIES)
-    with CRITERIA_YAML.open() as f:
+    with CRITERIA_YAML.open(encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     families = data.get("role_families")
     if isinstance(families, dict):
@@ -192,7 +192,7 @@ def main() -> int:
         sys.stderr.write(f"bullets.yaml not found at {args.path}\n")
         return 1
 
-    with args.path.open() as f:
+    with args.path.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
         sys.stderr.write("bullets.yaml did not parse to a mapping\n")

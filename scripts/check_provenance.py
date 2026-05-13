@@ -96,7 +96,7 @@ def _load_bullets() -> dict[str, set]:
     }
     if not BULLETS_YAML.exists():
         return out
-    with BULLETS_YAML.open() as f:
+    with BULLETS_YAML.open(encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     out["bullet"] = {b["id"] for b in data.get("bullets", []) if b.get("id")}
     out["summary"] = {
@@ -125,7 +125,7 @@ def _flatten_keys(obj: Any, prefix: str = "") -> set[str]:
 def _load_personal_fact_keys() -> set[str]:
     if not PERSONAL_FACTS.exists():
         return set()
-    with PERSONAL_FACTS.open() as f:
+    with PERSONAL_FACTS.open(encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     return _flatten_keys(data)
 
@@ -170,7 +170,7 @@ def check_sidecar(sidecar: Path, universes: dict[str, Any]) -> list[str]:
     """Return list of error strings for this sidecar (empty → pass)."""
     errors: list[str] = []
     try:
-        with sidecar.open() as f:
+        with sidecar.open(encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
     except yaml.YAMLError as e:
         return [f"{sidecar}: invalid YAML: {e}"]

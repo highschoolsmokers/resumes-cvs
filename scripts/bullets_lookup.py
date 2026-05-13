@@ -44,7 +44,7 @@ def load(path: Path) -> dict:
     if not path.exists():
         sys.stderr.write(f"bullets.yaml not found at {path}\n")
         sys.exit(1)
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

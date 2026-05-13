@@ -124,7 +124,7 @@ def load_bullets(path: Path = BULLETS_YAML) -> dict[str, Any]:
     if not path.exists():
         sys.stderr.write(f"bullets.yaml not found at {path}\n")
         sys.exit(1)
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
     # Index bullets / summaries / roles / skills by id for fast lookup.
     data['_bullets_by_id'] = {b['id']: b for b in data.get('bullets', [])}
@@ -973,7 +973,7 @@ def main() -> int:
     bullets = load_bullets(args.bullets)
 
     if args.plan:
-        with args.plan.open() as f:
+        with args.plan.open(encoding="utf-8") as f:
             plan = yaml.safe_load(f) or {}
         resolve_plan(plan, bullets)
         out = args.out or args.plan.with_suffix('.docx').with_name('resume.docx')

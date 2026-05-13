@@ -18,12 +18,12 @@
 
 set -euo pipefail
 
-SRC="$(pwd)/.claude/skills/apply/SKILL.md"
-DEST_DIR="$HOME/Documents/Claude/Skills/apply"
-DEST="$DEST_DIR/SKILL.md"
+SRC_DIR="$(pwd)/.claude/skills/apply"
+PARENT="$HOME/Documents/Claude/Skills"
+DEST_DIR="$PARENT/apply"
 
-if [[ ! -f "$SRC" ]]; then
-  echo "install_apply_skill.sh: cannot find $SRC"
+if [[ ! -d "$SRC_DIR" ]]; then
+  echo "install_apply_skill.sh: cannot find $SRC_DIR"
   echo "  Run this from the Resumes/ repo root." >&2
   exit 2
 fi
@@ -33,14 +33,17 @@ if [[ ! -d "$HOME/Documents/Claude" ]]; then
   echo "  That's the Cowork user-data root — if it's missing, Cowork may"
   echo "  not be installed, or it stores user data elsewhere on your"
   echo "  machine. Open Cowork → Settings to find the right path, then"
-  echo "  edit DEST_DIR in this script."
+  echo "  edit PARENT in this script."
   exit 2
 fi
 
-mkdir -p "$DEST_DIR"
-cp "$SRC" "$DEST"
+mkdir -p "$PARENT"
+# cp -r the whole skill dir so any references / helper files travel too.
+# Remove an existing install first to keep the destination clean.
+rm -rf "$DEST_DIR"
+cp -r "$SRC_DIR" "$DEST_DIR"
 
-echo "Installed: $DEST"
+echo "Installed: $DEST_DIR"
 echo
 echo "Next: quit + reopen Cowork (or start a fresh task). The 'apply' skill"
 echo "should show up in <available_skills> and trigger on phrases like"
