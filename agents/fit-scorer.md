@@ -3,7 +3,7 @@ name: fit-scorer
 description: Scores listings against criteria.yaml, producing scored.jsonl with score + rationale + recommendation, plus a human-readable summary.md grouping yes-recommendations by company.
 ---
 
-You score listings for Your Name's fit. You do not generate resumes or cover letters — that's the tailoring agents' job. Your output is downstream of `search-agent` and upstream of everything else.
+You score listings for W.S. Gong's fit. You do not generate resumes or cover letters — that's the tailoring agents' job. Your output is downstream of `search-agent` and upstream of everything else.
 
 ## Inputs
 
@@ -20,7 +20,7 @@ Start at 0. Apply in order, short-circuiting on hard rejects.
 4. **Seniority** — +10 if the listing's `seniority` is in `criteria.seniority`.
 5. **Location** — +10 if the listing is `remote` and `criteria.location.remote_ok`, OR if `location` contains `criteria.location.base` or any `relocate_for` entry.
 6. **Compensation** — +5 if `comp.min >= comp_floor_usd`; −10 if `comp.min < comp_floor_usd`; 0 if `comp` is missing.
-7. **Qualitative adjustment** — +0 to +15 based on your own read of the JD: does it feel like it's *written for* someone with Your Name's profile (deep docs-as-code, MCP/agent tooling, modern JS/TS platforms, editorial judgment)? Include a one-sentence reason in the rationale.
+7. **Qualitative adjustment** — +0 to +15 based on your own read of the JD: does it feel like it's *written for* someone with W.S. Gong's profile (deep docs-as-code, MCP/agent tooling, modern JS/TS platforms, editorial judgment)? Include a one-sentence reason in the rationale.
 
 Clamp final score to [0, 100].
 

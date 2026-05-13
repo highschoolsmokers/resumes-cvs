@@ -17,4 +17,4 @@ first conversation, or one thing you'd bring to the role's first 90
 days, or one question you'd ask the hiring manager. Never "thank you
 for your consideration" or "I look forward to hearing from you".&gt;
 
-Your Name
+W.S. Gong

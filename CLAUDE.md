@@ -36,7 +36,7 @@ These are enforced rules, not suggestions. Violations should be caught in review
 ### 1.3 Identity
 
 - Git identity is **local to this repo only** — set via `git config user.name` / `user.email` (no `--global`). Confirm with `git config --local --list | grep user`.
-- Default identity: `Your Name <you@example.com>`. Ask the user before changing.
+- Default identity: `W.S. Gong <billygong@me.com>`. Ask the user before changing.
 
 ### 1.4 .gitignore guarantees
 
@@ -60,7 +60,7 @@ Binary `.docx` diffs are unreadable. For any generated resume or cover letter:
 
 ### 1.6 Canonical resume style
 
-Every resume goes through `build_resume.py` operating on `resume-template.docx`. The style spec at `docs/resume-style-spec.md` is authoritative for typography. Do **not** introduce a second resume template, rewrite `build_resume.py` from scratch, or switch fonts without explicit user sign-off.
+Every resume goes through `build_resume.py` operating on `WSGong_Resume_Template.docx`. The style spec at `docs/resume-style-spec.md` is authoritative for typography. Do **not** introduce a second resume template, rewrite `build_resume.py` from scratch, or switch fonts without explicit user sign-off.
 
 ## 2. Phased build plan
 
@@ -93,7 +93,7 @@ Goal: a listing in, a tailored `.docx` + `.pdf` out, with every claim traceable.
 
 Create:
 
-- `bullets.yaml` — enumerate every usable accomplishment from the existing `resume-template.docx` and the tailored resumes under `NVIDIA/`, `Vercel/`, `Handshake/`, etc. Tag each per spec §4.4. Built collaboratively with the user — the initial extraction runs through `scripts/extract_bullets.py`, then the user verifies every line. No auto-fabrication.
+- `bullets.yaml` — enumerate every usable accomplishment from the existing `WSGong_Resume_Template.docx` and the tailored resumes under `NVIDIA/`, `Vercel/`, `Handshake/`, etc. Tag each per spec §4.4. Built collaboratively with the user — the initial extraction runs through `scripts/extract_bullets.py`, then the user verifies every line. No auto-fabrication.
 - `build_resume.py` refactor: accepts `--plan <path>` and `--out <path>` flags. Plan YAML has `target_role_family`, `summary_id` / `summary_text`, `skill_order`, `bullets_by_role`, `show_projects` / `show_publications` / `show_community`, and a free-form `picked_because` block for per-bullet rationale. Without `--plan`, produces the generalised resume byte-for-byte (acceptance check).
 - `agents/resume-tailor.md` — prompt per spec §9.2. Includes dry-run mode, `fit-report.md` sibling artifact, and an explicit refusal protocol (`[NEEDS SOURCE]`).
 - `scripts/extract_bullets.py` — helper to dump every DOCX bullet before hand-curation.
@@ -110,7 +110,7 @@ Acceptance:
 - `resume-tailor` against a sample listing produces a `resume.docx` whose every bullet appears verbatim in `bullets.yaml`.
 - `resume.provenance.yaml` is emitted alongside, with an entry for every bullet/skill/summary sentence and `unsourced_claims: []`.
 - Output passes the style-spec checks (font, accent color, layout).
-- Rerun with identical inputs → byte-identical `.docx` and byte-identical provenance. (`python3 build_resume.py` from a clean checkout reproduces `YYYY-MM-DD-your-resume-generalized.docx` content exactly.)
+- Rerun with identical inputs → byte-identical `.docx` and byte-identical provenance. (`python3 build_resume.py` from a clean checkout reproduces `2026-04-17-wsgong-resume-generalized.docx` content exactly.)
 - The corresponding `resume.unpacked/` is committed alongside.
 - `scripts/url_ingest.py <linkedin-url>` creates a well-formed application folder and branch without touching `seen.db`.
 - `scripts/lint_bullets.py` exits 0 on the committed `bullets.yaml`.
@@ -222,12 +222,15 @@ Everything else — searching, scoring, tailoring, drafting, committing, archivi
 - Don't set global git config. Local only.
 - Don't run `git push --force` against `main`. Ever.
 - Don't skip pre-commit hooks (`--no-verify`) unless the user asks. The provenance hook (§8.8) in particular must never be bypassed — it's the hallucination guard.
-- Don't modify `resume-template.docx` (the pristine master) except to fix a genuine bug in the master itself — and then ask first.
+- Don't modify `WSGong_Resume_Template.docx` (the pristine master) except to fix a genuine bug in the master itself — and then ask first.
 - Don't introduce a second resume font, second accent color, or second template layout without user sign-off.
 - Don't `git add .DS_Store` even once — it'll live forever in history.
 - **Don't invent resume bullets.** Every claim must trace to `bullets.yaml` or the template. If you're about to write a sentence you can't cite, write `[NEEDS SOURCE: <claim>]` and stop — never fill the gap with a plausible guess.
 - **Don't invent company facts.** Every concrete noun in a cover letter (product, customer, announcement, dollar figure) must be cited in `company-facts.md` with a URL. If your research pass came back empty, fall back to a JD-specific detail from `listing.md` — don't make something up.
 - **Don't invent personal facts.** Every answer to a recruiter question about the user must cite a key in `config/personal-facts.yaml`. If the answer isn't there, insert `[USER TO ANSWER: <question>]` in the draft — never guess at visa status, comp expectations, start date, or relocation willingness.
+- **Don't write buzzy cover-letter openings.** This is a repeat correction. The first sentence of P1 must state W.S.'s interest in the position itself, expressed concretely (e.g. `"I'd like this role because <specific reason from JD or company facts>."`). Never quote the company's marketing copy back at them, never lead with a famous-customer/stat-then-meta-pivot ("that's the precedent in the room"), never use "what excites me about" / "what pulled me to" / "what drew me to". Authoritative rule: `config/voice.yaml → opening`.
+- **NEVER open a cover letter with timely news about the company.** Repeat correction (Cognition Partner-DE letter, 2026-04-22: "DO NOT start with timely news. I find it corny and that it is trying too hard."). No recent product launches, acquisitions, market expansions, partnerships, blog posts, customer wins, funding rounds, conference appearances, or anything framed as "news." No "today" / "this morning" / "last week" / "recently" / "just announced." No name-drops of a freshly announced customer or partner as the hook. Open with W.S.'s own work or framing. Company facts in the body must be DURABLE context (what the product does, who the team serves), not news. Authoritative rule: `config/voice.yaml → opening` (HARD-BANNED OPENING PATTERNS).
+- **Don't use em-dashes (—) in W.S.'s voice.** Anywhere prose is rendered as W.S.: cover letters, reply drafts, `[USER TO ANSWER]` placeholders, anywhere. He's a colons / semicolons / parens / period person and never uses em-dashes in this context. Replace any em-dash with one of those. En-dashes (–) for date and number ranges (e.g. 2017–2020, 20–45) are fine. Authoritative rule: `config/voice.yaml → style_notes`.
 - Don't send email. Only stage drafts in Mail.app's Drafts mailbox via AppleScript's `make new outgoing message`. Never use `send`.
 - Don't create confirmed calendar events. `[TENTATIVE]` only, until the user explicitly confirms a slot.
 - Don't commit `config/personal-facts.yaml` — it's gitignored. If the user pastes contents in chat, update the file on disk (locally); do not stage it.

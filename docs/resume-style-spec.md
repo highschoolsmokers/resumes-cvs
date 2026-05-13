@@ -1,6 +1,6 @@
-# Resume style spec — Your Name template
+# Resume style spec — W.S. Gong template
 
-This is the canonical style for Your Name's resumes. The user has a preferred public name — fill in yourself when forking. A blank template .docx with this styling preserved lives at `resume-template.docx` in this repo — prefer copying and editing that file over rebuilding from scratch, since faithful reproduction via docx-js is fiddly.
+This is the canonical style for W.S. Gong's resumes. The user prefers to be referred to as **W.S. Gong** (not Billy) in all resume/CV contexts. A blank template .docx with this styling preserved lives at `WSGong_Resume_Template.docx` in this repo — prefer copying and editing that file over rebuilding from scratch, since faithful reproduction via docx-js is fiddly.
 
 > **Note on scope.** The typography and layout values below describe an earlier Arial / single-column style that is preserved here for historical reference. The current canonical style is the **Swiss redesign (2026-04-20)** — see "Current canonical style (Swiss, 2026-04-20)" near the end of this doc for the authoritative settings. The fields in the middle of this doc (font, sizes for the legacy Arial master) are reference only; the layout, section order, voice, and content rules remain authoritative.
 
@@ -237,7 +237,7 @@ Any other deviation requires explicit user sign-off — see CLAUDE.md §6.
 
 ## When creating or editing a resume
 
-**Preferred:** copy `resume-template.docx` and replace text content via the docx skill's unpack → Edit → pack flow. This preserves every style above exactly.
+**Preferred:** copy `WSGong_Resume_Template.docx` and replace text content via the docx skill's unpack → Edit → pack flow. This preserves every style above exactly.
 
 **From scratch (docx-js):** explicitly set page size to US Letter, override the docDefaults, and apply all run properties inline per the specs above — docx-js does not read an existing styles.xml.
 

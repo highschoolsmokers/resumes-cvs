@@ -1,14 +1,14 @@
 # Job Search Agent — Implementation Spec
 
-**Author:** Your Name
+**Author:** W.S. Gong
 **Last updated:** 2026-04-18
 **Status:** Draft v1 — ready for implementation
 
 ## 0. Goal
 
-A local-first, git-versioned system of cooperating agents that (1) finds technical roles Your Name is a strong fit for, (2) provisions and tailors a resume for each, (3) drafts a cover letter in his voice, (4) tracks every application through to outcome, and (5) archives past applications in a form that is easy to grep, diff, and learn from.
+A local-first, git-versioned system of cooperating agents that (1) finds technical roles W.S. Gong is a strong fit for, (2) provisions and tailors a resume for each, (3) drafts a cover letter in his voice, (4) tracks every application through to outcome, and (5) archives past applications in a form that is easy to grep, diff, and learn from.
 
-The design leans on tools already available: Apple Mail via AppleScript (for inbox monitoring and staging recruiter-reply drafts — the user is an iCloud Mail user, not Gmail), Google Calendar via its connected MCP (for interview scheduling), Chrome MCP (for DOM-aware browsing of LinkedIn and Greenhouse), Google Drive and Notion (optional), plus the existing `build_resume.py` pipeline and the `resume-template.docx` master. State lives on disk under `Resumes/`. Versioning is plain `git` — every listing, resume revision, cover letter, and tracker change is a commit.
+The design leans on tools already available: Apple Mail via AppleScript (for inbox monitoring and staging recruiter-reply drafts — the user is an iCloud Mail user, not Gmail), Google Calendar via its connected MCP (for interview scheduling), Chrome MCP (for DOM-aware browsing of LinkedIn and Greenhouse), Google Drive and Notion (optional), plus the existing `build_resume.py` pipeline and the `WSGong_Resume_Template.docx` master. State lives on disk under `Resumes/`. Versioning is plain `git` — every listing, resume revision, cover letter, and tracker change is a commit.
 
 There is no persistent mail credential to store anywhere: the agents talk to the already-signed-in Mail.app (which holds the iCloud IMAP session) via the `mcp__Control_your_Mac__osascript` tool.
 
@@ -63,8 +63,8 @@ Resumes/
 ├── .git/
 ├── job-search-agent-spec.md          ← this file
 ├── build_resume.py                   ← existing generator
-├── resume-template.docx       ← pristine master template
-├── YYYY-MM-DD-your-resume-generalized.docx  ← latest generalized build
+├── WSGong_Resume_Template.docx       ← pristine master template
+├── 2026-04-17-wsgong-resume-generalized.docx  ← latest generalized build
 │
 ├── config/
 │   ├── criteria.yaml                 ← role targeting rules (§3.2)
@@ -126,7 +126,7 @@ Conventions: every folder and file name is lowercase-kebab, with an ISO date suf
 
 ### 3.1 Goal
 
-Discover listings for which Your Name is plausibly a top-10% candidate, across LinkedIn, Greenhouse-hosted careers pages, and a configurable set of other sources. Produce a normalised, de-duplicated stream of listings for downstream scoring and tailoring.
+Discover listings for which W.S. Gong is plausibly a top-10% candidate, across LinkedIn, Greenhouse-hosted careers pages, and a configurable set of other sources. Produce a normalised, de-duplicated stream of listings for downstream scoring and tailoring.
 
 ### 3.2 Criteria (`config/criteria.yaml`)
 
@@ -318,11 +318,11 @@ Acceptance criteria:
 
 ### 4.1 Goal
 
-For each selected listing, produce a one-page `.docx` resume (+ `.pdf` export) that preserves the canonical Your Name Swiss style (see `/.auto-memory/resume_style_spec.md`) and is tuned to the listing's specific language and stack — without inventing experience.
+For each selected listing, produce a one-page `.docx` resume (+ `.pdf` export) that preserves the canonical W.S. Gong Swiss style (see `/.auto-memory/resume_style_spec.md`) and is tuned to the listing's specific language and stack — without inventing experience.
 
 ### 4.2 Inputs
 
-- Generalised source: `resume-template.docx` + the most recent `*-your-resume-generalized.docx` build.
+- Generalised source: `WSGong_Resume_Template.docx` + the most recent `*-wsgong-resume-generalized.docx` build.
 - The listing's `description_md`, `requirements`, `tech_mentions`.
 - Optional: prior tailored resumes for the same company (reused as scaffolding — see §8).
 
@@ -341,7 +341,7 @@ A YAML file at the repo root enumerating every usable accomplishment bullet, plu
 
 ```yaml
 meta:
-  canonical_name: "Your Name"
+  canonical_name: "W.S. Gong"
   contact: { city, phone, email, site, github, linkedin }
 
 roles:
@@ -360,7 +360,7 @@ bullets:
     text: "Produced API references, integration guides, SDK documentation..."
     role_family: [technical-writer, developer-relations]   # which families favour this bullet
     tags: [api-docs, block-kit, workflows]                 # topical tags for hand lookup
-    source_doc: YYYY-MM-DD-your-resume-generalized.docx  # where the wording came from
+    source_doc: 2026-04-17-wsgong-resume-generalized.docx  # where the wording came from
 
 summaries:                            # pre-written summary paragraphs, per family
   developer-relations:
@@ -478,7 +478,7 @@ The fit report also doubles as pre-context for `cover-letter-writer` (§5): the 
 
 ### 5.1 Goal
 
-A cover letter per listing that reads like Your Name wrote it — specific to the company and role, grounded in real projects, never generic.
+A cover letter per listing that reads like W.S. Gong wrote it — specific to the company and role, grounded in real projects, never generic.
 
 ### 5.2 Voice corpus
 
@@ -496,7 +496,7 @@ forbidden_phrases:
   - "dynamic team"
   - "wear many hats"
   - "results-oriented"
-signature: "Your Name"
+signature: "W.S. Gong"
 ```
 
 ### 5.3 Flow
@@ -854,15 +854,15 @@ These are starting points, not final prompts. Each will live at `agents/<name>.m
 
 ### 9.1 `search-agent`
 
-> You are a job-search agent for Your Name. Read `config/criteria.yaml` and `config/sites.yaml`. For each site, execute its strategy (chrome-mcp | web-fetch | api). Normalise every listing to the schema in §3.4. De-dupe against `search/seen.db`. Write one `listings.jsonl` to a fresh `search/runs/<timestamp>/` folder. Do not score, rank, or drop listings — that is the fit-scorer's job. Log every adapter's raw response under `raw/` for debugging. Commit nothing.
+> You are a job-search agent for W.S. Gong. Read `config/criteria.yaml` and `config/sites.yaml`. For each site, execute its strategy (chrome-mcp | web-fetch | api). Normalise every listing to the schema in §3.4. De-dupe against `search/seen.db`. Write one `listings.jsonl` to a fresh `search/runs/<timestamp>/` folder. Do not score, rank, or drop listings — that is the fit-scorer's job. Log every adapter's raw response under `raw/` for debugging. Commit nothing.
 
 ### 9.2 `resume-tailor`
 
-> You tailor Your Name's resume for one listing. Read the listing, `bullets.yaml`, `resume-template.docx`, and `docs/resume-style-spec.md`. Produce `resume-plan.yaml` selecting: a rewritten summary (≤ 3 sentences), an ordering of skill categories, and 2–4 bullet IDs per role. Hard rule: every claim must trace to an existing bullet or the generalized resume. If you are about to write a sentence you cannot cite to a `bullets.yaml` ID, STOP and write `[NEEDS SOURCE: <claim>]` instead — never fill the gap with a plausible guess. Then call `build_resume.py --plan resume-plan.yaml` to emit `resume.docx` in the application folder. Emit `resume.provenance.yaml` per §8.8. Commit on branch `app/<slug>`; the pre-commit hook will block you if any claim is unsourced.
+> You tailor W.S. Gong's resume for one listing. Read the listing, `bullets.yaml`, `WSGong_Resume_Template.docx`, and `docs/resume-style-spec.md`. Produce `resume-plan.yaml` selecting: a rewritten summary (≤ 3 sentences), an ordering of skill categories, and 2–4 bullet IDs per role. Hard rule: every claim must trace to an existing bullet or the generalized resume. If you are about to write a sentence you cannot cite to a `bullets.yaml` ID, STOP and write `[NEEDS SOURCE: <claim>]` instead — never fill the gap with a plausible guess. Then call `build_resume.py --plan resume-plan.yaml` to emit `resume.docx` in the application folder. Emit `resume.provenance.yaml` per §8.8. Commit on branch `app/<slug>`; the pre-commit hook will block you if any claim is unsourced.
 
 ### 9.3 `cover-letter-writer`
 
-> Draft a 300–400 word cover letter for this listing in Your Name's voice. BEFORE drafting, populate `applications/<…>/company-facts.md` with every concrete fact you plan to cite and the URL you got it from — no citation, no citing. Read the listing, the tailored resume, `voice-corpus/*`, `config/voice.yaml`, and your own company-facts.md. Three paragraphs: concrete hook, evidence bridge, direct close. Never use any `forbidden_phrases`. Cite one specific product, customer, or announcement by name from company-facts.md — if your research pass found nothing concrete, fall back to a JD-specific detail and cite listing.md. Output `cover-letter.md`, emit `cover-letter.provenance.yaml`, render `cover-letter.pdf`. Commit. If you're about to write a sentence with a concrete noun you can't cite, stop and write `[NEEDS SOURCE: <noun>]` inline — the pre-commit hook will block the commit until it's resolved.
+> Draft a 300–400 word cover letter for this listing in W.S. Gong's voice. BEFORE drafting, populate `applications/<…>/company-facts.md` with every concrete fact you plan to cite and the URL you got it from — no citation, no citing. Read the listing, the tailored resume, `voice-corpus/*`, `config/voice.yaml`, and your own company-facts.md. Three paragraphs: concrete hook, evidence bridge, direct close. Never use any `forbidden_phrases`. Cite one specific product, customer, or announcement by name from company-facts.md — if your research pass found nothing concrete, fall back to a JD-specific detail and cite listing.md. Output `cover-letter.md`, emit `cover-letter.provenance.yaml`, render `cover-letter.pdf`. Commit. If you're about to write a sentence with a concrete noun you can't cite, stop and write `[NEEDS SOURCE: <noun>]` inline — the pre-commit hook will block the commit until it's resolved.
 
 ### 9.4 `tracker-agent`
 

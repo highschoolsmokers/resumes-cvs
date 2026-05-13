@@ -6,7 +6,7 @@
 #   summary:<id>     -> bullets.yaml -> summaries[*].id
 #   skill:<id>       -> bullets.yaml -> skills_menu[*].id
 #   education:<id>   -> bullets.yaml -> education[*].id
-#   template:<key>   -> resume-template.docx fixed text (name, contact info, etc.)
+#   template:<key>   -> WSGong_Resume_Template.docx fixed text (name, contact info, etc.)
 #
 # unsourced_claims MUST be an empty list. If it isn't, the pre-commit hook
 # (scripts/check_provenance.py) blocks the commit. If you're about to emit
