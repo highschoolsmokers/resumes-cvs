@@ -125,6 +125,7 @@ The catalog of voice and content failures that made v1 read as bullshit. Every a
 - **Keyword soup.** Listing concepts as if they were skills — especially ones you don't actually *do*. `Constitutional AI` is a research paper, not a skill. → Name tools you've shipped with; cut the padding.
 - **Fog verbs.** "working on / leveraging / passionate about / excited by agentic systems." → Say what you built and what happened.
 - **The cute aphorism.** "Docs-as-tests catches drift before users do." Sounds smart, states nothing. → Give the concrete mechanism and the result.
+- **Self-assessment flourishes.** Grading your own prose: "so the test plans read clearly," "keeps the bug reports sharp," "and it shows in how I document it." Corny, and unverifiable. → State the credential or the artifact plainly and stop ("MFA in Creative Writing." / "I write the bug reports and test plans."). Never tell the reader your writing is good; the writing does that or it doesn't.
 - **The "X in; Y out" tic.** Pipeline-poetry standing in for substance. → One plain sentence.
 - **Em-dashes (job-search register).** Colons, semicolons, parens, periods; en-dashes for ranges only. His literary voice uses them freely — this ban is job-search prose only.
 - **Marketing-copy openings** (cover letters). No company news, no "what excites me about," no quoting their marketing back at them. Permanent. → Open with your own framing; durable company facts only.
