@@ -1,55 +1,30 @@
 #!/usr/bin/env python3
-"""Build W.S. Gong's resume from the Swiss template.
+"""Swiss/Inter OOXML rendering engine for W.S. Gong's resume.
 
-Modes:
-    python build_resume.py                     → regenerate the generalized resume
-                                                 (default behaviour, same as before)
-    python build_resume.py --plan P --out O    → plan-driven tailored resume
+This module is the rendering engine only. It exposes three entry points used by
+`scripts/render_resume.py`:
 
-Plan YAML schema:
-    target_role_family: developer-relations          # key from config/criteria.yaml
-    summary_id:         devrel-summary-docs-platform # id from bullets.yaml summaries
-    summary_text:       null                         # optional override (must still be sourced)
-    skill_order:        [agentic-programming, technical-writing, ...]  # skills_menu keys
-    bullets_by_role:
-        independent-2022: [independent-mcp-servers-paperless-colophon-litverity, ...]
-        slack-2017:       [slack-api-refs-adopted-externally, ...]
-    show_projects:      true                         # include the Projects block
-    show_publications:  true
-    show_community:     true
+    unpack_docx(docx_path, dst)   — explode resume-template.docx into OOXML parts
+    render(work, plan, bullets)   — mutate the OOXML in place from plan + bullets dicts
+    pack_docx(src, docx_path)     — re-zip the OOXML parts into a .docx
 
-Everything the plan references is resolved against `bullets.yaml`. If a plan
-names an id that does not resolve, this script fails loud — that is exactly the
-anti-hallucination guard (see spec §8.8).
-
-Both modes also write a `<out>.unpacked/` sibling so DOCX diffs are legible in
-git (see CLAUDE.md §1.5).
+`render()` takes a `plan` dict (summary text, skill order, bullets-by-role,
+section toggles) and a `bullets` dict (roles, bullets, skills, education,
+publications, community — with `_*_by_id` lookup indexes). Both dicts are built
+by the caller (`render_resume.py` parses `master-resume.md` into them); this
+module does no file parsing of its own beyond the template DOCX.
 """
 from __future__ import annotations
 
-import argparse
 import re
 import shutil
 import sys
-import tempfile
 import zipfile
 from pathlib import Path
-from typing import Any
-
-try:
-    import yaml  # type: ignore
-except ImportError:  # pragma: no cover
-    sys.stderr.write(
-        "build_resume.py needs PyYAML.\n"
-        "    pip install pyyaml --break-system-packages\n"
-    )
-    sys.exit(1)
 
 
 REPO = Path(__file__).resolve().parent.parent  # scripts/build_resume.py → repo root
 TEMPLATE = REPO / 'resume-template.docx'
-BULLETS_YAML = REPO / 'bullets.yaml'
-DEFAULT_OUT = REPO / '2026-04-17-wsgong-resume-generalized.docx'
 
 
 # -----------------------------------------------------------------------------
@@ -114,106 +89,6 @@ def copy_unpacked_sibling(work: Path, out_docx: Path) -> Path:
         shutil.rmtree(sibling)
     shutil.copytree(work, sibling)
     return sibling
-
-
-# -----------------------------------------------------------------------------
-# plan loading
-# -----------------------------------------------------------------------------
-
-def load_bullets(path: Path = BULLETS_YAML) -> dict[str, Any]:
-    if not path.exists():
-        sys.stderr.write(f"bullets.yaml not found at {path}\n")
-        sys.exit(1)
-    with path.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    # Index bullets / summaries / roles / skills by id for fast lookup.
-    data['_bullets_by_id'] = {b['id']: b for b in data.get('bullets', [])}
-    data['_roles_by_id']   = {r['id']: r for r in data.get('roles', [])}
-    data['_summaries_by_id'] = {
-        s['id']: s
-        for family_summaries in (data.get('summaries') or {}).values()
-        for s in family_summaries
-    }
-    data['_skills_by_id'] = dict((data.get('skills_menu') or {}))
-    data['_education_by_id'] = {e['id']: e for e in data.get('education', [])}
-    return data
-
-
-def resolve_plan(plan: dict[str, Any], bullets: dict[str, Any]) -> dict[str, Any]:
-    """Resolve id references in `plan` against `bullets`. Fail hard on misses."""
-    errors: list[str] = []
-
-    if 'summary_id' in plan and plan['summary_id']:
-        if plan['summary_id'] not in bullets['_summaries_by_id']:
-            errors.append(f"summary_id not in bullets.yaml: {plan['summary_id']}")
-    elif not plan.get('summary_text'):
-        errors.append("plan must supply summary_id or summary_text")
-
-    for key in plan.get('skill_order', []):
-        if key not in bullets['_skills_by_id']:
-            errors.append(f"skill key not in bullets.yaml: {key}")
-
-    for role_id, bullet_ids in (plan.get('bullets_by_role') or {}).items():
-        if role_id not in bullets['_roles_by_id']:
-            errors.append(f"role_id not in bullets.yaml: {role_id}")
-        for bid in bullet_ids:
-            if bid not in bullets['_bullets_by_id']:
-                errors.append(f"bullet id not in bullets.yaml: {bid}")
-            else:
-                b = bullets['_bullets_by_id'][bid]
-                if b.get('role_id') != role_id:
-                    errors.append(
-                        f"bullet {bid} belongs to role {b.get('role_id')} "
-                        f"but plan lists it under {role_id}"
-                    )
-
-    if errors:
-        sys.stderr.write("Plan validation failed:\n")
-        for e in errors:
-            sys.stderr.write(f"  - {e}\n")
-        sys.exit(2)
-
-    return plan
-
-
-# -----------------------------------------------------------------------------
-# default (generalized) plan — mirrors the 2026-04-17 generalized resume
-# -----------------------------------------------------------------------------
-
-def generalized_plan(bullets: dict[str, Any]) -> dict[str, Any]:
-    """Hand-assembled plan that reproduces the pristine generalized resume."""
-    return {
-        'target_role_family': None,                       # no tailoring
-        'summary_text': (
-            "Twenty-five years in software QA and developer platforms, retooled through an MFA "
-            "and a working editorial practice. Operates at the intersection of language and "
-            "systems: docs-as-tests, agentic workflows, technical prose for non-expert "
-            "audiences, literary editing applied to API references. Currently Fiction Editor "
-            "at The Rumpus under Roxane Gay, with an independent contract practice building "
-            "MCP servers, Claude Code plugins, and multi-agent web applications."
-        ),
-        'summary_id': None,
-        'skill_order': ['agentic-programming', 'technical-writing',
-                        'languages-platforms', 'editorial-teaching'],
-        'bullets_by_role': {
-            'independent-2022': [
-                'independent-mcp-servers-paperless-colophon-litverity',
-                'independent-docs-pipelines-openapi',
-                'independent-tutorials-nonexpert',
-            ],
-            'rumpus-2024':   ['rumpus-editorial-workflow'],
-            'fabulosa-2022': ['fabulosa-multi-agent-scheduler'],
-            'sfsu-2020':     ['sfsu-curriculum-undergrad'],
-            'slack-2017':    ['slack-api-refs-adopted-externally',
-                              'slack-cypress-90-coverage'],
-            'appthority-2015': ['appthority-e2e-platform'],
-            'gopro-2012':      ['gopro-ruby-api-framework'],
-            'earlier-1997':    ['earlier-summary'],
-        },
-        'show_projects':     True,
-        'show_publications': True,
-        'show_community':    True,
-    }
 
 
 # -----------------------------------------------------------------------------
@@ -566,19 +441,13 @@ def _education_entries_static(bullets: dict) -> list[tuple]:
 
 
 def build_publications_inner(bullets: dict) -> str:
-    """Render publications_activity as label/value stacks — label on its own
-    line (bold), value on the next. Replaces the prior single-line
-    "<label> — <value>" layout."""
+    """Render publications_activity entries at normal body weight — only section
+    labels/titles are bold. Each entry is one plain paragraph."""
     items = bullets.get('publications_activity', [])
     chunks: list[str] = []
     for i, item in enumerate(items):
-        if ' — ' in item:
-            label, value = item.split(' — ', 1)
-        else:
-            label, value = item, ''
-        chunks.append(para_label_then_value(
-            xml_escape(label),
-            xml_escape(value),
+        chunks.append(para_body(
+            xml_escape(item),
             before=0 if i == 0 else 240,
         ))
     return "".join(chunks)
@@ -760,10 +629,11 @@ def render(work: Path, plan: dict, bullets: dict) -> None:
     # Step 4: name / tagline / contact
     name = bullets['meta']['canonical_name']
     first, last = (name.split(' ', 1) + [''])[:2]
+    tagline = plan.get('tagline') or 'Engineer, Editor, Writer'
     header_replacements = [
         ('<w:t xml:space="preserve">Your</w:t>', f'<w:t xml:space="preserve">{xml_escape(first)}</w:t>'),
         ('<w:t xml:space="preserve">Name</w:t>', f'<w:t xml:space="preserve">{xml_escape(last)}</w:t>'),
-        ('<w:t xml:space="preserve">Creative Director</w:t>', '<w:t xml:space="preserve">Engineer, Editor, Writer</w:t>'),
+        ('<w:t xml:space="preserve">Creative Director</w:t>', f'<w:t xml:space="preserve">{xml_escape(tagline)}</w:t>'),
         ('<w:t xml:space="preserve">123 Your Street</w:t>',
          f'<w:t xml:space="preserve">{xml_escape(bullets["meta"]["contact"]["city"])}</w:t>'),
     ]
@@ -910,95 +780,3 @@ def render(work: Path, plan: dict, bullets: dict) -> None:
     content = content[:row_starts[1]] + new_rows_xml + content[row_ends[4]:]
 
     doc_path.write_text(content)
-
-    # Step 9: whole-document Swiss consistency lint. Hard fail on drift —
-    # this is what enforces "consistent throughout the document, not just
-    # by section." Any new spacing/size/font value we introduce here that
-    # diverges from the existing scale will fail the build.
-    _enforce_consistency(content)
-
-
-def _enforce_consistency(document_xml: str) -> None:
-    """Run scripts/lint_resume.py's checks against the final document.xml.
-
-    Imported lazily so the script remains usable without the linter on
-    PYTHONPATH (e.g., from a checkout missing scripts/). Failure is hard:
-    we sys.exit so build_resume produces no output rather than a silently
-    inconsistent .docx.
-    """
-    sys.path.insert(0, str(REPO / 'scripts'))
-    try:
-        import lint_resume  # type: ignore
-    except ImportError:
-        sys.stderr.write(
-            "build_resume: scripts/lint_resume.py missing — "
-            "cannot enforce whole-document consistency.\n"
-        )
-        return
-    issues = lint_resume.lint(document_xml)
-    if not issues:
-        return
-    sys.stderr.write(
-        f"build_resume: refusing to write — {len(issues)} consistency "
-        "issue(s) detected by lint_resume:\n"
-    )
-    for name, msg in issues:
-        sys.stderr.write(f"  [{name}] {msg}\n")
-    sys.exit(3)
-
-
-# -----------------------------------------------------------------------------
-# CLI
-# -----------------------------------------------------------------------------
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--plan', type=Path, default=None,
-                        help='plan YAML. omitted → rebuild the generalized resume')
-    parser.add_argument('--out', type=Path, default=None,
-                        help='output .docx path (default: the generalized resume path)')
-    parser.add_argument('--template', type=Path, default=TEMPLATE,
-                        help='source template docx (default: resume-template.docx)')
-    parser.add_argument('--bullets', type=Path, default=BULLETS_YAML,
-                        help='bullets.yaml (default: repo root)')
-    parser.add_argument('--no-unpacked', dest='unpacked', action='store_false', default=True,
-                        help='skip the .unpacked/ sibling (used by /apply for speed; '
-                             'keep it on for the generalized resume to preserve audit diff)')
-    args = parser.parse_args()
-
-    if not args.template.exists():
-        sys.stderr.write(f"template not found: {args.template}\n")
-        return 1
-
-    bullets = load_bullets(args.bullets)
-
-    if args.plan:
-        with args.plan.open(encoding="utf-8") as f:
-            plan = yaml.safe_load(f) or {}
-        resolve_plan(plan, bullets)
-        out = args.out or args.plan.with_suffix('.docx').with_name('resume.docx')
-    else:
-        plan = generalized_plan(bullets)
-        out = args.out or DEFAULT_OUT
-
-    out.parent.mkdir(parents=True, exist_ok=True)
-
-    sibling = None
-    with tempfile.TemporaryDirectory() as td:
-        work = Path(td) / 'work'
-        unpack_docx(args.template, work)
-        render(work, plan, bullets)
-        pack_docx(work, out)
-        if args.unpacked:
-            sibling = copy_unpacked_sibling(work, out)
-
-    # Summary line
-    content_len = (out.stat().st_size)
-    print(f"Resume written → {out}  ({content_len:,} bytes)")
-    if sibling:
-        print(f"  unpacked OOXML → {sibling}")
-    return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main())
