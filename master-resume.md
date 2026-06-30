@@ -1,6 +1,6 @@
 # W.S. Gong
 
-San Francisco, CA · billygong@me.com · https://www.ws-gong.com/code · linkedin.com/in/billy-gong
+San Francisco, CA · billygong@me.com · https://www.ws-gong.com/code · https://linkedin.com/in/billy-gong
 
 > Source of truth for the résumé. Tailoring **subtracts and reorders** from this file; it never invents. Voice rules and anti-patterns: see [SPEC.md §9](SPEC.md). No em-dashes in W.S.'s voice.
 
@@ -70,7 +70,7 @@ San Francisco State University · 2023–2025 · San Francisco, CA
 Slack Technologies · 2017–2020 · San Francisco, CA
 
 - Wrote the API references, SDK guides, and platform tutorials used across its platform; built internal Web API tooling that external developers adopted as official documentation examples.
-- Quality authority across eight feature teams (Block Kit, Workflows, platform APIs). Directed four staff/senior engineers, promoted three.
+- Owned QA end to end for eight feature teams (Block Kit, Workflows, platform APIs) in the Platform QA organization; directed four staff/senior engineers, promoted three.
 
 ### Senior SDET
 Appthority (acquired by Symantec) · 2015–2017 · San Francisco, CA
@@ -105,7 +105,7 @@ GoPro · 2012–2015 · San Mateo, CA
 
 ## Education
 
-- **MFA, Creative Writing (Fiction)** · San Francisco State University · 2021–2024. Faculty Lecturer; coursework in technical editing and writing.
+- **MFA, Creative Writing (Fiction), with distinction** · San Francisco State University · 2021–2024. Faculty Lecturer; coursework in technical editing and writing.
 - **BA, Philosophy and English** · University of California, Santa Barbara · 1995
 - **Certificate in Professional Editing** · UC Berkeley Extension · 2023
 
