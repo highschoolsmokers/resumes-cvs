@@ -1,39 +1,38 @@
 #!/usr/bin/env python3
 """Render `cover-letter.md` → `cover-letter.docx` with the W.S. Gong letterhead.
 
-The docx output then goes through `scripts/docx_to_pdf.py` to produce the
-PDF the user attaches to applications. Typography mirrors the resume's
-Swiss style: Inter single family (hierarchy via weight and size), #D44500
-accent. See `docs/resume-style-spec.md`.
+The docx then goes through `scripts/docx_to_pdf.py` to produce the PDF the user
+attaches to applications. Typography mirrors the resume's Swiss style: Inter
+single family (hierarchy via weight and size), #D44500 accent. See
+`docs/resume-style-spec.md`.
 
-Input markdown format (produced by agents/cover-letter-writer.md):
+This is the cover-letter half of the v2 markdown workflow. `voice.md` is the
+source the same way `master-resume.md` is for `render_resume.py`: its
+**Letterhead**, **Length**, and **Forbidden phrases** sections are parsed here
+at render time. The letter's *sound* is calibrated from `voice/`; its *shape*
+and anti-patterns live in `docs/cover-letter-spec.md`.
+
+Input markdown format:
 
     Dear <salutation>,
 
-    <Hook paragraph>
+    <paragraph>
 
-    <Bridge paragraph>
-
-    <Close paragraph>
+    <paragraph>
 
     W.S. Gong
 
-Blank lines separate paragraphs. The first non-empty line is treated as
-the salutation; the last non-empty line is treated as the signature.
-Everything in between is body.
+Blank lines separate paragraphs. The first non-empty block is the salutation;
+the last is the signature; everything between is body.
 
-Guardrails enforced at render time (spec §5.4, §9.3):
+Guardrails enforced at render time:
 
-    - Word count of the body (excluding salutation and signature) must
-      be ≤ `voice.yaml → length.hard_max` (default 500). If it isn't,
-      the script refuses to render and tells the user which bound was
-      crossed.
-    - Any hit against `voice.yaml → forbidden_phrases` prints a WARNING
-      but does not abort. The writer agent's self-audit is the first
-      line of defense; this is the second.
-    - The presence of any `[NEEDS SOURCE: ...]` marker aborts the
-      render — unsourced claims must be resolved before the document
-      is handed to the user.
+    - Body word count (excluding salutation and signature) must be
+      <= `voice.md` Length "Hard max". Over it, the script aborts.
+      Under the target floor or over the ceiling prints a WARNING only.
+    - Any hit against a `voice.md` Forbidden phrase prints a WARNING but
+      does not abort. The draft's own self-audit is the first defense.
+    - Any `[NEEDS SOURCE: ...]` marker aborts the render.
 
 Usage:
 
@@ -49,12 +48,6 @@ import sys
 from pathlib import Path
 
 try:
-    import yaml  # type: ignore
-except ImportError:  # pragma: no cover
-    sys.stderr.write("build_cover_letter.py needs PyYAML. pip install -r requirements.txt\n")
-    sys.exit(1)
-
-try:
     from docx import Document  # type: ignore
     from docx.enum.text import WD_ALIGN_PARAGRAPH  # type: ignore
     from docx.oxml.ns import qn  # type: ignore
@@ -66,7 +59,7 @@ except ImportError:  # pragma: no cover
 
 
 REPO = Path(__file__).resolve().parent.parent  # scripts/build_cover_letter.py → repo root
-VOICE_YAML = REPO / "config" / "voice.yaml"
+VOICE_MD = REPO / "voice.md"
 
 # Style constants — mirrors docs/resume-style-spec.md.
 ACCENT = RGBColor(0xD4, 0x45, 0x00)      # #D44500
@@ -77,14 +70,66 @@ DISPLAY_FONT = "Inter"
 BODY_FONT    = "Inter"
 
 
-# ─── Voice config ──────────────────────────────────────────────────────
+# ─── Voice config (parsed from voice.md, parallel to render_resume.py) ──
 
-def load_voice(path: Path = VOICE_YAML) -> dict:
+def _split_sections(md: str) -> dict[str, list[str]]:
+    """Split a markdown doc on `## ` headings → {heading: [body lines]}."""
+    out: dict[str, list[str]] = {}
+    current = None
+    for line in md.splitlines():
+        m = re.match(r"^##\s+(.+?)\s*$", line)
+        if m and not line.startswith("###"):
+            current = m.group(1).strip()
+            out[current] = []
+        elif current is not None:
+            out[current].append(line)
+    return out
+
+
+def load_voice(path: Path = VOICE_MD) -> dict:
+    """Parse the render config out of voice.md.
+
+    Reads three sections — Letterhead, Length, Forbidden phrases — into the
+    shape the renderer and guardrails consume (letterhead dict, length dict,
+    forbidden_phrases list). The rest of voice.md is prose for the writer.
+    """
     if not path.exists():
         sys.stderr.write(f"build_cover_letter.py: missing {path}\n")
         sys.exit(2)
-    with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    sections = _split_sections(path.read_text(encoding="utf-8"))
+
+    # Letterhead: `- **Label:** value` lines.
+    letterhead: dict = {}
+    for line in sections.get("Letterhead", []):
+        m = re.match(r"^-\s+\*\*(.+?):\*\*\s*(.+)$", line.strip())
+        if not m:
+            continue
+        label, value = m.group(1).strip().lower(), m.group(2).strip()
+        if label == "name":
+            letterhead["name"] = value
+        elif label == "subhead":
+            letterhead["subhead"] = value
+        elif label == "contact":
+            letterhead["contact_line"] = [p.strip() for p in value.split("·") if p.strip()]
+
+    # Length: a "Target: A–B words" range and a "Hard max: N words".
+    length: dict = {}
+    length_body = "\n".join(sections.get("Length", []))
+    tm = re.search(r"Target:\D*(\d+)\D+(\d+)", length_body)
+    if tm:
+        length["target_min"], length["target_max"] = int(tm.group(1)), int(tm.group(2))
+    hm = re.search(r"Hard max:\D*(\d+)", length_body)
+    if hm:
+        length["hard_max"] = int(hm.group(1))
+
+    # Forbidden phrases: every `- ` bullet in that section.
+    forbidden = [
+        line.strip()[2:].strip()
+        for line in sections.get("Forbidden phrases", [])
+        if line.strip().startswith("- ")
+    ]
+
+    return {"letterhead": letterhead, "length": length, "forbidden_phrases": forbidden}
 
 
 # ─── Parse markdown ────────────────────────────────────────────────────
@@ -154,7 +199,7 @@ def check_length(body: list[str], voice: dict) -> int:
     if count > hard_max:
         sys.stderr.write(
             f"build_cover_letter.py: body is {count} words; "
-            f"voice.yaml hard_max is {hard_max}. Cut and rerun.\n"
+            f"voice.md hard max is {hard_max}. Cut and rerun.\n"
         )
         sys.exit(2)
     if count < target_min:
@@ -237,15 +282,15 @@ def _letterhead(doc, contact: dict) -> None:
     sub_para = doc.add_paragraph()
     sub_para.paragraph_format.space_before = Pt(0)
     sub_para.paragraph_format.space_after = Pt(2)
-    sub_run = sub_para.add_run(contact.get("subhead", "Engineer, Editor, Writer"))
+    sub_run = sub_para.add_run(contact.get("subhead", "Developer. Writer, Editor."))
     _set_run_font(sub_run, DISPLAY_FONT, 11, MUTED, bold=False)
 
     # Contact line: one paragraph, small body weight, muted.
     parts = contact.get("contact_line", [
         "San Francisco, CA",
         "billygong@me.com",
-        "ws-gong.com",
-        "github.com/highschoolsmokers",
+        "ws-gong.com/code",
+        "linkedin.com/in/billy-gong",
     ])
     contact_para = doc.add_paragraph()
     contact_para.paragraph_format.space_before = Pt(0)
@@ -267,8 +312,7 @@ def _body_paragraph(doc, text: str, *, first_of_body: bool = False) -> None:
 
 
 def _simple_line(doc, text: str, *, before: int = 8, after: int = 0,
-                 size: float = 10.5, italic: bool = False,
-                 align=None) -> None:
+                 size: float = 10.5, align=None) -> None:
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(before)
     p.paragraph_format.space_after = Pt(after)
@@ -276,8 +320,6 @@ def _simple_line(doc, text: str, *, before: int = 8, after: int = 0,
         p.alignment = align
     run = p.add_run(text)
     _set_run_font(run, BODY_FONT, size, INK, bold=False)
-    if italic:
-        run.italic = True
 
 
 def render_letter(
@@ -313,8 +355,8 @@ def render_letter(
 
     # Date — right-aligned, muted body weight.
     import datetime as _dt
-    date_str = date_override or _dt.date.today().strftime("%B %-d, %Y") \
-        if sys.platform != "win32" else (date_override or _dt.date.today().strftime("%B %d, %Y"))
+    day_fmt = "%B %d, %Y" if sys.platform == "win32" else "%B %-d, %Y"
+    date_str = date_override or _dt.date.today().strftime(day_fmt)
     _simple_line(doc, date_str, before=10, after=2, size=10,
                  align=WD_ALIGN_PARAGRAPH.RIGHT)
 

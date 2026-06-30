@@ -67,6 +67,11 @@ config/voice.yaml
 voice-corpus/*
 !voice-corpus/README.md
 
+# Real cover-letter / outreach samples (private). voice.md is the tracked
+# distillation; the raw letters in voice/ stay local.
+voice/
+!voice/README.md
+
 # Search and sweep run artifacts — listings, scores, mail snapshots.
 # NOTE: this is stricter than spec §2 (which carves out summary.md / scored.jsonl
 # as committable). For a public-template repo, real search results are PII —
