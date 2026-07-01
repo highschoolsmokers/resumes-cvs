@@ -3,8 +3,8 @@
 
 This is the enforceable half of the "safeguards" plan: a check that runs
 OUTSIDE the model's judgment. It catches the specific mechanical tells that
-kept slipping into drafts (SPEC.md §9). It does NOT judge "voice" — that is
-what the known-good example in `voice/dev-docs-cover-letter.md` is for.
+kept slipping into drafts (profile.md Voice). It does NOT judge "voice" — that
+is what the known-good examples in `voice/` are for.
 
 Deliberately conservative: every rule is a concrete pattern, scoped so it does
 NOT flag anything in the approved known-good letter. Rules that would produce
@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-VOICE_MD = REPO / "SPEC.md"  # voice config now lives in SPEC.md §17 appendix
+VOICE_MD = REPO / "profile.md"  # forbidden-phrase list parsed from the ## Forbidden phrases heading in profile.md
 
 
 # ─── body extraction (mirrors build_cover_letter.parse_letter_md) ──────────

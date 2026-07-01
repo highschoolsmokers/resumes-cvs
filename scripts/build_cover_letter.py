@@ -4,13 +4,13 @@
 The docx then goes through `scripts/docx_to_pdf.py` to produce the PDF the user
 attaches to applications. Typography mirrors the resume's Swiss style: Inter
 single family (hierarchy via weight and size), #D44500 accent. See
-`SPEC.md` §13 (Résumé style).
+`profile.md` (Résumé).
 
 This is the cover-letter half of the v2 markdown workflow. `SPEC.md`'s **Voice
 config** appendix is the source the same way `master-resume.md` is for
 `render_resume.py`: its **Letterhead**, **Length**, and **Forbidden phrases**
 sections are parsed here at render time. The letter's *sound* is calibrated from
-`voice/`; its *shape* and anti-patterns live in `SPEC.md` §11 + §17.
+`voice/`; its *shape* and anti-patterns live in `SPEC.md` (Cover letters).
 
 Input markdown format:
 
@@ -59,9 +59,9 @@ except ImportError:  # pragma: no cover
 
 
 REPO = Path(__file__).resolve().parent.parent  # scripts/build_cover_letter.py → repo root
-VOICE_MD = REPO / "SPEC.md"  # voice config (Letterhead/Length/Forbidden phrases) lives in SPEC.md §17 appendix
+VOICE_MD = REPO / "profile.md"  # voice config parsed from the ## Letterhead / ## Length / ## Forbidden phrases headings in profile.md
 
-# Style constants — mirrors SPEC.md §13 (Résumé style).
+# Style constants — mirrors profile.md (Résumé).
 ACCENT = RGBColor(0xD4, 0x45, 0x00)      # #D44500
 INK    = RGBColor(0x1A, 0x1A, 0x1A)      # near-black body
 MUTED  = RGBColor(0x66, 0x66, 0x66)      # subheadings, contact line
@@ -220,13 +220,13 @@ def check_forbidden(body: list[str], voice: dict) -> list[str]:
     """Hard-fail the render on any forbidden phrase or em-dash. Enforced, not
     advisory: a draft carrying a known voice tell will not render, the same way
     a `[NEEDS SOURCE]` marker aborts. Keep the tell list in SPEC.md short and
-    high-precision (SPEC §12: the fix for bad voice is fewer rules + real
+    high-precision (profile.md Voice: the fix for bad voice is fewer rules + real
     examples) so this gate never blocks a legitimate letter."""
     phrases = voice.get("forbidden_phrases") or []
     joined = "\n".join(body)
     joined_lower = joined.lower()
     hits = [p for p in phrases if p.lower() in joined_lower]
-    if "—" in joined:  # em-dash: banned in the job-search register (SPEC §12)
+    if "—" in joined:  # em-dash: banned in the job-search register (profile.md Voice)
         hits.append("— (em-dash)")
     if hits:
         for phrase in hits:
