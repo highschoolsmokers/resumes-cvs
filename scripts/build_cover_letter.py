@@ -4,13 +4,13 @@
 The docx then goes through `scripts/docx_to_pdf.py` to produce the PDF the user
 attaches to applications. Typography mirrors the resume's Swiss style: Inter
 single family (hierarchy via weight and size), #D44500 accent. See
-`docs/resume-style-spec.md`.
+`SPEC.md` §13 (Résumé style).
 
 This is the cover-letter half of the v2 markdown workflow. `voice.md` is the
 source the same way `master-resume.md` is for `render_resume.py`: its
 **Letterhead**, **Length**, and **Forbidden phrases** sections are parsed here
 at render time. The letter's *sound* is calibrated from `voice/`; its *shape*
-and anti-patterns live in `docs/cover-letter-spec.md`.
+and anti-patterns live in `SPEC.md` §11–§12.
 
 Input markdown format:
 
@@ -61,7 +61,7 @@ except ImportError:  # pragma: no cover
 REPO = Path(__file__).resolve().parent.parent  # scripts/build_cover_letter.py → repo root
 VOICE_MD = REPO / "voice.md"
 
-# Style constants — mirrors docs/resume-style-spec.md.
+# Style constants — mirrors SPEC.md §13 (Résumé style).
 ACCENT = RGBColor(0xD4, 0x45, 0x00)      # #D44500
 INK    = RGBColor(0x1A, 0x1A, 0x1A)      # near-black body
 MUTED  = RGBColor(0x66, 0x66, 0x66)      # subheadings, contact line

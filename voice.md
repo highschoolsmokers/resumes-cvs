@@ -2,7 +2,7 @@
 
 How a W.S. Gong cover letter sounds, calibrated from the real letters in
 `voice/`. This file is the *sound*; the *shape* (job, structure, anti-patterns)
-lives in `docs/cover-letter-spec.md`. It is the cover-letter counterpart to
+lives in `SPEC.md` §11 (Cover letters). It is the cover-letter counterpart to
 `master-resume.md`: the source a tailored letter is written against.
 
 The three config blocks near the end — **Letterhead**, **Length**, **Forbidden
