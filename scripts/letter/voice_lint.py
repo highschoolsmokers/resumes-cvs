@@ -16,8 +16,8 @@ clearly"), buried ledes, over-claiming. A regex can't see those without
 false-flagging real prose. Those stay the job of the example + human review.
 
 Usage:
-    python scripts/voice_lint.py applications/<...>/cover-letter.md
-    python scripts/voice_lint.py --list      # print the rules
+    python scripts/letter/voice_lint.py applications/<...>/cover-letter.md
+    python scripts/letter/voice_lint.py --list      # print the rules
 Exit code 1 if any tell is found, 0 if clean.
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ import re
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 VOICE_MD = REPO / "profile.md"  # forbidden-phrase list parsed from the ## Forbidden phrases heading in profile.md
 
 

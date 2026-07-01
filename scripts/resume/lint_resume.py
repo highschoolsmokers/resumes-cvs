@@ -6,7 +6,7 @@ row type. The principle: if a typographic or geometric value is set at all,
 it should be set to the same value everywhere it appears.
 
 This is the enforcement mechanism behind the user's rule: "make things look
-consistent ... not just according to section." A regression in scripts/build_resume.py
+consistent ... not just according to section." A regression in scripts/resume/build_resume.py
 that introduces a one-off spacing value will fail this lint.
 
 Checks:
@@ -19,9 +19,9 @@ Checks:
      (multiples of the 60 DXA quarter-baseline).
 
 Usage:
-    python scripts/lint_resume.py <input.docx>
-    python scripts/lint_resume.py --unpacked <unpacked-dir>
-    python scripts/lint_resume.py --xml <document.xml>
+    python scripts/resume/lint_resume.py <input.docx>
+    python scripts/resume/lint_resume.py --unpacked <unpacked-dir>
+    python scripts/resume/lint_resume.py --xml <document.xml>
 """
 from __future__ import annotations
 

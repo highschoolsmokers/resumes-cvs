@@ -21,10 +21,10 @@ __pycache__/
 # Playwright MCP session cache (console/page snapshots from a Claude Code session)
 .playwright-mcp/
 
-# LinkedIn updater (scripts/linkedin_apply.py):
+# LinkedIn updater (scripts/linkedin/linkedin_apply.py):
 #   - the persistent Chrome profile holds logged-in SESSION COOKIES — sensitive.
 #   - run screenshots/logs capture the live profile.
-#   - the JSON is a rebuildable intermediate (scripts/linkedin_export.py --json).
+#   - the JSON is a rebuildable intermediate (scripts/linkedin/linkedin_export.py --json).
 # linkedin-profile.md itself stays tracked, like the resume-*.md deliverables.
 .linkedin-chrome-profile/
 linkedin-runs/
@@ -35,7 +35,7 @@ linkedin-profile.json
 ~$*.xlsx
 ~$*.pptx
 
-# LibreOffice scratch dirs created by scripts/docx_to_pdf.py — normally cleaned
+# LibreOffice scratch dirs created by scripts/pdf/docx_to_pdf.py — normally cleaned
 # after a run, but a crashed run can leave one behind.
 **/.docx_to_pdf_*/
 

@@ -2,8 +2,8 @@
 """Render one or more `.docx` files to `.pdf` via headless LibreOffice.
 
 Usage:
-    python scripts/docx_to_pdf.py <input.docx> [--out <output.pdf>]
-    python scripts/docx_to_pdf.py <a.docx> <b.docx> [<c.docx> ...]   # batch
+    python scripts/pdf/docx_to_pdf.py <input.docx> [--out <output.pdf>]
+    python scripts/pdf/docx_to_pdf.py <a.docx> <b.docx> [<c.docx> ...]   # batch
 
 Batch mode: a single `soffice` invocation converts all inputs in one cold
 start (~3-4s saved per additional file). PDFs are written as siblings of the

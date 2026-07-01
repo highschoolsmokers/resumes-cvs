@@ -17,9 +17,9 @@ the rest of the profile is shared):
     fde       ← "Forward-Deployed Engineering"
 
 Usage:
-    python scripts/linkedin_export.py --target education
-    python scripts/linkedin_export.py --target education --out linkedin-profile.md
-    python scripts/linkedin_export.py --target education --json linkedin-profile.json
+    python scripts/linkedin/linkedin_export.py --target education
+    python scripts/linkedin/linkedin_export.py --target education --out linkedin-profile.md
+    python scripts/linkedin/linkedin_export.py --target education --json linkedin-profile.json
 
 LinkedIn field limits enforced (script warns, never silently truncates):
     headline 220 · about 2600 · experience title 100 · experience desc 2000
@@ -33,10 +33,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import render_resume as rr  # noqa: E402  — reuse the master-resume.md parser
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "resume"))
+import render_resume as rr  # noqa: E402  — reuse the master-resume.md parser (scripts/resume)
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 MASTER = REPO / 'master-resume.md'
 
 LIMITS = {
@@ -173,7 +173,7 @@ def render_md(p: dict[str, Any]) -> str:
     L: list[str] = []
     L.append(f"# LinkedIn profile — {p['name']}  ·  target: {p['target']}")
     L.append("")
-    L.append("> Generated from master-resume.md by scripts/linkedin_export.py.")
+    L.append("> Generated from master-resume.md by scripts/linkedin/linkedin_export.py.")
     L.append("> Paste each field into LinkedIn's editor. Every claim traces to the résumé.")
     L.append("")
     L.append(f"## Headline  ({len(p['headline'])}/{LIMITS['headline']})")

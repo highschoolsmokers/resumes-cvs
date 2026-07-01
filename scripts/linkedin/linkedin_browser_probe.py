@@ -7,9 +7,9 @@ No login and no evasion: one navigation per mode to the public LinkedIn entry
 page, plus the fingerprint signals that predict detection (navigator.webdriver,
 plugin count, headless UA) and an accessible-name locator resolution check.
 
-    python scripts/linkedin_browser_probe.py
+    python scripts/linkedin/linkedin_browser_probe.py
 
-Findings that drove scripts/linkedin_apply.py's choice (2026-06-30):
+Findings that drove scripts/linkedin/linkedin_apply.py's choice (2026-06-30):
   - bundled Chromium leaks (plugins:0, HeadlessChrome UA) — rejected.
   - real Chrome via channel="chrome" launched by Playwright → webdriver:true.
   - real Chrome + ignore_default_args=["--enable-automation"] +

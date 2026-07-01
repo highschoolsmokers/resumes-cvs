@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render `cover-letter.md` → `cover-letter.docx` with the W.S. Gong letterhead.
 
-The docx then goes through `scripts/docx_to_pdf.py` to produce the PDF the user
+The docx then goes through `scripts/pdf/docx_to_pdf.py` to produce the PDF the user
 attaches to applications. Typography mirrors the resume's Swiss style: Inter
 single family (hierarchy via weight and size), #D44500 accent. See
 `profile.md` (Résumé).
@@ -57,7 +57,7 @@ except ImportError:  # pragma: no cover
     sys.exit(1)
 
 
-REPO = Path(__file__).resolve().parent.parent  # scripts/build_cover_letter.py → repo root
+REPO = Path(__file__).resolve().parents[2]  # scripts/letter/build_cover_letter.py → repo root
 VOICE_MD = REPO / "profile.md"  # voice config parsed from the ## Letterhead / ## Length / ## Forbidden phrases headings in profile.md
 
 # Style constants — mirrors profile.md (Résumé).

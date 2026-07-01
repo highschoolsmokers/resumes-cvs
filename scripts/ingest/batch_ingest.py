@@ -13,8 +13,8 @@ folder and whether it is a stub that still needs a browser fetch or a pasted JD:
       "requires_chrome_mcp", "requires_user_fill", "error"}, ...]
 
 Usage:
-    python3 scripts/batch_ingest.py <url1> <url2> ...
-    printf '%s\\n' <url1> <url2> | python3 scripts/batch_ingest.py --stdin
+    python3 scripts/ingest/batch_ingest.py <url1> <url2> ...
+    printf '%s\\n' <url1> <url2> | python3 scripts/ingest/batch_ingest.py --stdin
 """
 from __future__ import annotations
 

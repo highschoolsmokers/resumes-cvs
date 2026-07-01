@@ -2,7 +2,7 @@
 """Merge several PDFs into one, preserving page order.
 
 Usage:
-    python scripts/merge_pdfs.py <out.pdf> <in1.pdf> <in2.pdf> [in3.pdf ...]
+    python scripts/pdf/merge_pdfs.py <out.pdf> <in1.pdf> <in2.pdf> [in3.pdf ...]
 
 Convention (SPEC.md §7 Cover letters / §9 Implementation): the resume goes first,
 the cover letter goes second. That produces the `combined.pdf` that lives beside

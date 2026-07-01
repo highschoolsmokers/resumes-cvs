@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The ONE file to edit when LinkedIn's DOM shifts.
 
-scripts/linkedin_apply.py never hard-codes a selector; it asks this module for a
+scripts/linkedin/linkedin_apply.py never hard-codes a selector; it asks this module for a
 logical target ("edit_intro", "headline_field", "save_button") and gets back an
 ordered list of locator factories. Each factory takes a Playwright root (a Page
 or a Locator, e.g. the open dialog) and returns a Locator. The driver tries them

@@ -2,7 +2,7 @@
 """Swiss/Inter OOXML rendering engine for W.S. Gong's resume.
 
 This module is the rendering engine only. It exposes three entry points used by
-`scripts/render_resume.py`:
+`scripts/resume/render_resume.py`:
 
     unpack_docx(docx_path, dst)   — explode resume-template.docx into OOXML parts
     render(work, plan, bullets)   — mutate the OOXML in place from plan + bullets dicts
@@ -23,7 +23,7 @@ import zipfile
 from pathlib import Path
 
 
-REPO = Path(__file__).resolve().parent.parent  # scripts/build_resume.py → repo root
+REPO = Path(__file__).resolve().parents[2]  # scripts/resume/build_resume.py → repo root
 TEMPLATE = REPO / 'resume-template.docx'
 
 

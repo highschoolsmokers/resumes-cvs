@@ -25,7 +25,7 @@ Scripts that need a pip dep run via `.venv/bin/python`; the rest on system
 ## One listing
 
 ```bash
-python3 scripts/url_ingest.py "<greenhouse|lever|ashby URL>" --no-commit
+python3 scripts/ingest/url_ingest.py "<greenhouse|lever|ashby URL>" --no-commit
 ```
 
 Then, in Claude Code: tailor `resume.md` from the matching base, write and approve
@@ -44,9 +44,9 @@ pass, and prints a review table. Nothing is submitted.
 ## LinkedIn sync
 
 ```bash
-python3 scripts/linkedin_export.py --target education --out linkedin-profile.md --json linkedin-profile.json
-python3 scripts/linkedin_apply.py                        # dry-run: shows every change, saves nothing
-python3 scripts/linkedin_apply.py --commit --experience  # applies, confirming before each save
+python3 scripts/linkedin/linkedin_export.py --target education --out linkedin-profile.md --json linkedin-profile.json
+python3 scripts/linkedin/linkedin_apply.py                        # dry-run: shows every change, saves nothing
+python3 scripts/linkedin/linkedin_apply.py --commit --experience  # applies, confirming before each save
 ```
 
 `linkedin_export.py` maps `master-resume.md` onto LinkedIn's fields at its

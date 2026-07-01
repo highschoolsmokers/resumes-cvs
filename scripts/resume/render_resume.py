@@ -12,8 +12,8 @@ Three targets, selected from the "## Summary (by target)" section:
     fde       ← "Forward-Deployed Engineering"
 
 Usage:
-    python scripts/render_resume.py --target devdocs --out path/to/resume.pdf
-    python scripts/render_resume.py --all --outdir path/to/dir
+    python scripts/resume/render_resume.py --target devdocs --out path/to/resume.pdf
+    python scripts/resume/render_resume.py --all --outdir path/to/dir
 
 The engine (template fonts-swap to Inter, #D44500 accent, two-column layout) is
 imported, not reimplemented. We only PARSE markdown into its input shapes.
@@ -32,7 +32,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_resume as engine  # noqa: E402  — reuse the proven OOXML engine
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 MASTER = REPO / 'master-resume.md'
 TEMPLATE = REPO / 'resume-template.docx'
 

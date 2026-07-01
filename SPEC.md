@@ -164,7 +164,12 @@ linkedin-profile.md       # generated LinkedIn copy (tracked deliverable)
 linkedin-profile.json     # machine-readable LinkedIn source for the driver (gitignored)
 voice/                    # real letter samples, for voice matching (gitignored)
 applications/             # one folder per job: listing + outputs (gitignored)
-scripts/                  # render + ingest + LinkedIn tooling
+scripts/                  # tooling, grouped by area:
+  resume/                 #   build_resume, render_resume, lint_resume
+  letter/                 #   build_cover_letter, voice_lint
+  ingest/                 #   url_ingest, batch_ingest, fetch_metacareers
+  pdf/                    #   docx_to_pdf, merge_pdfs
+  linkedin/               #   linkedin_export, linkedin_apply, linkedin_selectors, linkedin_browser_probe
 resume-template.docx      # the Swiss/Inter template the engine renders into
 SPEC.md                   # this file
 CLAUDE.md                 # thin session-loaded pointer to this file
@@ -182,15 +187,29 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 (`build_cover_letter.py`, `render_resume.py`/`build_resume.py`, `merge_pdfs.py`,
 the LinkedIn scripts) run via `.venv/bin/python`; the rest run on system `python3` (3.11+).
 
-### Scripts (under `scripts/`)
+### Scripts
 
+Grouped under `scripts/<area>/`; run each by its path.
+
+**`resume/`**
+- `render_resume.py --input <resume.md> --out <pdf>` — render a tailored résumé. `--target <t>` renders a base directly; `--emit-base --target <t> --out <md>` regenerates a base; `--docx-only` stops at `.docx`.
+- `build_resume.py` — the Swiss/Inter OOXML engine `render_resume.py` drives (not run directly).
+- `lint_resume.py <docx>` — Swiss-style résumé linter.
+
+**`letter/`**
+- `build_cover_letter.py --input <cover-letter.md> --out <docx>` — enforces the Letterhead, Length, and Forbidden phrases from `profile.md`; aborts on `[NEEDS SOURCE]`. Run via `.venv/bin/python`.
+- `voice_lint.py <letter.md>` — cover-letter voice linter (checks the Forbidden phrases).
+
+**`ingest/`**
 - `url_ingest.py <URL> --no-commit` — detect source; fetch Greenhouse/Lever/Ashby via ATS JSON APIs; LinkedIn/generic emit a stub `listing.json` flagged `requires_chrome_mcp` / `requires_user_fill`.
 - `batch_ingest.py <URL…>` — ingest a list; print a JSON manifest (folder, company, title, source, stub flags).
-- `render_resume.py --input <resume.md> --out <pdf>` — render a tailored résumé. `--target <t>` renders a base directly; `--emit-base --target <t> --out <md>` regenerates a base; `--docx-only` stops at `.docx`.
-- `build_cover_letter.py --input <cover-letter.md> --out <docx>` — enforces the Letterhead, Length, and Forbidden phrases from `profile.md`; aborts on `[NEEDS SOURCE]`. Run via `.venv/bin/python`.
-- `docx_to_pdf.py <docx…>` — convert many docx to PDF in one LibreOffice pass (soffice is single-instance; never run two at once).
+- `fetch_metacareers.py <URL>` — fetch a JS-rendered Meta careers JD via the Jina reader proxy into the listing schema.
+
+**`pdf/`**
+- `docx_to_pdf.py <docx…>` — convert many docx to PDF in one LibreOffice pass (a private profile per run; never run two soffice at once).
 - `merge_pdfs.py <out.pdf> <résumé.pdf> <cover-letter.pdf>` — combine into one upload (output path first, résumé before letter).
-- `lint_resume.py <docx>` — Swiss-style résumé linter. `voice_lint.py <letter.md>` — cover-letter voice linter (checks the Forbidden phrases).
+
+**`linkedin/`**
 - `linkedin_export.py --target <t> [--out linkedin-profile.md] [--json linkedin-profile.json]` — map `master-resume.md` onto LinkedIn fields at LinkedIn's char limits (headline 220, About 2600, exp desc 2000); warns, never truncates. Reuses `render_resume.parse_master`, so the copy can't drift.
 - `linkedin_apply.py [--commit] [--yes] [--experience]` — push `linkedin-profile.json` (Headline, About, experience descriptions) onto the live profile via real Chrome (Playwright). Dry-run unless `--commit`; asks before each save unless `--yes`; idempotent; verifies after save; logs to `linkedin-runs/<ts>/`.
 - `linkedin_selectors.py` — the one selector map to edit when LinkedIn's DOM shifts. `linkedin_browser_probe.py` — re-runnable launch-stability diagnostic.
@@ -207,10 +226,10 @@ by exact name. Keep those three headings at `##` level with those exact names.
 Single listing — ingest, tailor `resume.md`, propose and approve the cover letter, then:
 
 ```bash
-python3 scripts/render_resume.py --input <folder>/resume.md --out <folder>/resume.pdf
-.venv/bin/python scripts/build_cover_letter.py --input <folder>/cover-letter.md --out <folder>/cover-letter.docx
-python3 scripts/docx_to_pdf.py <folder>/cover-letter.docx
-.venv/bin/python scripts/merge_pdfs.py <folder>/combined.pdf <folder>/resume.pdf <folder>/cover-letter.pdf
+python3 scripts/resume/render_resume.py --input <folder>/resume.md --out <folder>/resume.pdf
+.venv/bin/python scripts/letter/build_cover_letter.py --input <folder>/cover-letter.md --out <folder>/cover-letter.docx
+python3 scripts/pdf/docx_to_pdf.py <folder>/cover-letter.docx
+.venv/bin/python scripts/pdf/merge_pdfs.py <folder>/combined.pdf <folder>/resume.pdf <folder>/cover-letter.pdf
 ```
 
 Return the path to the application folder when done, not one file.
@@ -224,17 +243,17 @@ each writing `resume.md` and a cover-letter draft; build every `.docx`, then one
 Regenerate the generated bases when `master-resume.md` changes:
 
 ```bash
-python3 scripts/render_resume.py --emit-base --target devdocs   --out resume-devdocs.md
-python3 scripts/render_resume.py --emit-base --target education --out resume-education.md
-python3 scripts/render_resume.py --emit-base --target fde       --out resume-fde.md
+python3 scripts/resume/render_resume.py --emit-base --target devdocs   --out resume-devdocs.md
+python3 scripts/resume/render_resume.py --emit-base --target education --out resume-education.md
+python3 scripts/resume/render_resume.py --emit-base --target fde       --out resume-fde.md
 ```
 
 LinkedIn sync — regenerate the copy from the master, review it, then apply under supervision:
 
 ```bash
-python3 scripts/linkedin_export.py --target education --out linkedin-profile.md --json linkedin-profile.json
-python3 scripts/linkedin_apply.py                 # dry-run: shows every change, saves nothing
-python3 scripts/linkedin_apply.py --commit --experience   # applies, confirming before each save
+python3 scripts/linkedin/linkedin_export.py --target education --out linkedin-profile.md --json linkedin-profile.json
+python3 scripts/linkedin/linkedin_apply.py                 # dry-run: shows every change, saves nothing
+python3 scripts/linkedin/linkedin_apply.py --commit --experience   # applies, confirming before each save
 ```
 
 ### Conventions

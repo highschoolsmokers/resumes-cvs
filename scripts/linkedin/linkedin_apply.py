@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Push the résumé-derived LinkedIn profile onto the live profile, via real Chrome.
 
-Syncs three things from linkedin-profile.json (scripts/linkedin_export.py --json):
+Syncs three things from linkedin-profile.json (scripts/linkedin/linkedin_export.py --json):
   - Headline   (intro editor)
   - About      (about editor)
   - Experience (--experience): each position's DESCRIPTION, matched to a résumé
@@ -12,7 +12,7 @@ The driver never re-parses the résumé, so the LinkedIn copy can't drift from i
 
 Design (why it does not break easily):
   - Real Chrome via Playwright channel="chrome" + anti-automation flags. The
-    probe (scripts/linkedin_browser_probe.py) showed this is the only launch
+    probe (scripts/linkedin/linkedin_browser_probe.py) showed this is the only launch
     config that hides navigator.webdriver AND keeps a real fingerprint. Falls
     back to bundled Chromium with --browser chromium.
   - Headed + a persistent, DEDICATED profile dir (.linkedin-chrome-profile/):
@@ -34,16 +34,16 @@ one-time, human-supervised, self-owned edits; the risk is yours to accept.
 
 Usage:
     # dry run (default): fills Headline + About, screenshots, saves NOTHING
-    .venv/bin/python scripts/linkedin_apply.py
+    .venv/bin/python scripts/linkedin/linkedin_apply.py
 
     # commit Headline + About, confirming before each save
-    .venv/bin/python scripts/linkedin_apply.py --commit
+    .venv/bin/python scripts/linkedin/linkedin_apply.py --commit
 
     # experience descriptions only, dry run
-    .venv/bin/python scripts/linkedin_apply.py --experience --fields ""
+    .venv/bin/python scripts/linkedin/linkedin_apply.py --experience --fields ""
 
     # everything, no per-save prompt
-    .venv/bin/python scripts/linkedin_apply.py --experience --commit --yes
+    .venv/bin/python scripts/linkedin/linkedin_apply.py --experience --commit --yes
 """
 from __future__ import annotations
 
@@ -64,7 +64,7 @@ from playwright.sync_api import (
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import linkedin_selectors as sel  # noqa: E402
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 DEFAULT_JSON = REPO / "linkedin-profile.json"
 DEFAULT_PROFILE_DIR = REPO / ".linkedin-chrome-profile"
 RUNS_DIR = REPO / "linkedin-runs"
@@ -405,7 +405,7 @@ def main() -> int:
 
     if not args.profile.exists():
         sys.exit(f"profile JSON not found: {args.profile}\n"
-                 f"generate it: .venv/bin/python scripts/linkedin_export.py "
+                 f"generate it: .venv/bin/python scripts/linkedin/linkedin_export.py "
                  f"--target education --json {args.profile}")
     data = json.loads(args.profile.read_text(encoding="utf-8"))
 

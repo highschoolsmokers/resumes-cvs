@@ -14,7 +14,7 @@ workers).
 Collect every URL from `$ARGUMENTS` and the message; then:
 
 ```bash
-python3 scripts/batch_ingest.py <url1> <url2> ...
+python3 scripts/ingest/batch_ingest.py <url1> <url2> ...
 ```
 
 Read the JSON array it prints. Each entry has `folder`, `company`, `title`,
@@ -50,11 +50,11 @@ then convert everything in a single call:
 ```bash
 # per tailorable folder that produced files:
 #   build_cover_letter.py needs python-docx → run it via the repo venv.
-.venv/bin/python scripts/build_cover_letter.py --input <folder>/cover-letter.md --out <folder>/cover-letter.docx
-python3 scripts/render_resume.py --input <folder>/resume.md --out <folder>/resume.docx --docx-only
+.venv/bin/python scripts/letter/build_cover_letter.py --input <folder>/cover-letter.md --out <folder>/cover-letter.docx
+python3 scripts/resume/render_resume.py --input <folder>/resume.md --out <folder>/resume.docx --docx-only
 
 # then ONE conversion for the whole batch:
-python3 scripts/docx_to_pdf.py <folder1>/resume.docx <folder1>/cover-letter.docx <folder2>/resume.docx <folder2>/cover-letter.docx ...
+python3 scripts/pdf/docx_to_pdf.py <folder1>/resume.docx <folder1>/cover-letter.docx <folder2>/resume.docx <folder2>/cover-letter.docx ...
 ```
 
 If `.venv` is missing, create it once: `python3 -m venv .venv && .venv/bin/pip install python-docx PyYAML`.

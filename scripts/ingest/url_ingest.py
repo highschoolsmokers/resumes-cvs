@@ -4,9 +4,9 @@
 The one-listing on-ramp for the workflow (SPEC.md §2 Workflow).
 
 Usage:
-    python scripts/url_ingest.py <URL>
-    python scripts/url_ingest.py <URL> --company "Anthropic" --title "Forward Deployed Engineer"
-    python scripts/url_ingest.py --from-stdin     # paste JD text manually
+    python scripts/ingest/url_ingest.py <URL>
+    python scripts/ingest/url_ingest.py <URL> --company "Anthropic" --title "Forward Deployed Engineer"
+    python scripts/ingest/url_ingest.py --from-stdin     # paste JD text manually
 
 What this script does:
     1. Detect the source ATS from the URL.
@@ -47,7 +47,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 APPLICATIONS = REPO / "applications"
 USER_AGENT = "ws-gong-job-search/0.1 (url_ingest.py)"
 

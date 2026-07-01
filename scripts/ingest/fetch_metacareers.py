@@ -10,10 +10,10 @@ Meta-specific keys). Downstream tailoring runs against it with
 `requires_user_fill: false`.
 
 Usage:
-    python scripts/fetch_metacareers.py <metacareers-url>
-    python scripts/fetch_metacareers.py <url> --company Meta        # default
-    python scripts/fetch_metacareers.py <url> --commit              # branch+commit
-    python scripts/fetch_metacareers.py <url> --print-md            # debug: dump proxy markdown
+    python scripts/ingest/fetch_metacareers.py <metacareers-url>
+    python scripts/ingest/fetch_metacareers.py <url> --company Meta        # default
+    python scripts/ingest/fetch_metacareers.py <url> --commit              # branch+commit
+    python scripts/ingest/fetch_metacareers.py <url> --print-md            # debug: dump proxy markdown
 
 Why a proxy and not curl: direct requests to metacareers return a 1.5 KB Error
 page regardless of headers or cookie warm-up (verified 2026-06-30). The reader
@@ -249,7 +249,7 @@ def main() -> int:
         sys.stderr.write(
             f"fetch_metacareers.py: reader proxy fetch failed: {e}\n"
             "  Fallback: copy the JD text and run\n"
-            "    python scripts/url_ingest.py <url> --from-stdin --company Meta --title '<Role>'\n")
+            "    python scripts/ingest/url_ingest.py <url> --from-stdin --company Meta --title '<Role>'\n")
         return 1
 
     if args.print_md:

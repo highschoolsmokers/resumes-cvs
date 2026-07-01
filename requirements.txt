@@ -1,11 +1,11 @@
 # Python dependencies. Install into .venv: pip install -r requirements.txt
 # Only the scripts noted below need a pip dep; the rest run on system python3.
 
-python-docx>=1.1,<2   # scripts/build_cover_letter.py (letterhead + body)
-lxml>=5,<6            # OOXML pretty-print inside scripts/build_resume.py
-pypdf>=4,<5           # scripts/merge_pdfs.py
-playwright>=1.44,<2   # scripts/linkedin_apply.py + linkedin_browser_probe.py (real Chrome)
+python-docx>=1.1,<2   # scripts/letter/build_cover_letter.py (letterhead + body)
+lxml>=5,<6            # OOXML pretty-print inside scripts/resume/build_resume.py
+pypdf>=4,<5           # scripts/pdf/merge_pdfs.py
+playwright>=1.44,<2   # scripts/linkedin/linkedin_apply.py + linkedin_browser_probe.py (real Chrome)
 
 # System (not pip-installable):
-#   brew install --cask libreoffice font-inter   # scripts/docx_to_pdf.py + embedded Inter
+#   brew install --cask libreoffice font-inter   # scripts/pdf/docx_to_pdf.py + embedded Inter
 #   brew install gh                               # PR utilities
