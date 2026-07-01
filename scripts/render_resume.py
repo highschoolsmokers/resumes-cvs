@@ -448,17 +448,81 @@ def _docx_to_pdf(docx: Path, outdir: Path) -> Path:
     return outdir / (docx.stem + '.pdf')
 
 
-def render_target(target: str, out_pdf: Path, bullets: dict, plan: dict) -> None:
-    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+def render_target(target: str, out: Path, bullets: dict, plan: dict,
+                  docx_only: bool = False) -> None:
+    """Render into the template and write `out`. With docx_only, emit the .docx
+    and skip the internal soffice PDF step (so a batch can convert every docx in
+    ONE soffice invocation via docx_to_pdf.py — soffice is single-instance)."""
+    out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         work = Path(td) / 'work'
         docx = Path(td) / f'{target}.docx'
         engine.unpack_docx(TEMPLATE, work)
         engine.render(work, plan, bullets)
         engine.pack_docx(work, docx)
-        pdf = _docx_to_pdf(docx, Path(td))
-        out_pdf.write_bytes(pdf.read_bytes())
-    print(f"{target} → {out_pdf}  ({out_pdf.stat().st_size:,} bytes)")
+        if docx_only:
+            out.write_bytes(docx.read_bytes())
+        else:
+            pdf = _docx_to_pdf(docx, Path(td))
+            out.write_bytes(pdf.read_bytes())
+    kind = 'docx' if docx_only else 'pdf'
+    print(f"{target} → {out}  ({out.stat().st_size:,} bytes, {kind})")
+
+
+def emit_base(bullets: dict, plan: dict) -> str:
+    """Serialize a parsed (bullets, plan) back into the tailored `--input`
+    markdown format, so a master target can be materialized as a reusable base
+    résumé (per SPEC.md §10 Targets & bases)."""
+    m = bullets['meta']
+    c = m['contact']
+    out: list[str] = [
+        f"# {m['canonical_name']}",
+        "",
+        f"{c['city']} · {c['email']} · https://{c['site']} · https://{c['github']}",
+        "",
+        f"**{plan['tagline']}**",
+        "",
+        plan['summary_text'],
+        "",
+        "---",
+        "",
+        "## Experience",
+    ]
+    for r in bullets['roles']:
+        rids = plan['bullets_by_role'].get(r['id'], [])
+        if not rids:
+            continue
+        out.append("")
+        if r['id'] == 'earlier' or r['employer'] == 'Earlier Experience':
+            out.append("### Previous Experience")
+            out.append("")
+            text = bullets['_bullets_by_id'][rids[0]]['text'].rstrip('.')
+            for item in (i.strip() for i in text.split(';')):
+                out.append(f"- {item}")
+            continue
+        out.append(f"### {r['title_default']}")
+        out.append(f"{r['employer']} · {r['start']}–{r['end']} · {r['location']}")
+        out.append("")
+        for bid in rids:
+            out.append(f"- {bullets['_bullets_by_id'][bid]['text']}")
+
+    out += ["", "## Skills"]
+    order = plan.get('skill_order') or list(bullets['skills_menu'].keys())
+    for key in order:
+        s = bullets['skills_menu'].get(key)
+        if s:
+            out.append(f"- **{s['label']}:** {s['content']}")
+
+    out += ["", "## Education"]
+    for e in bullets['education']:
+        yr = f"{e['start']}–{e['end']}" if e['start'] and e['end'] else (e['end'] or e['start'])
+        tail = f"{yr}. {e['detail']}" if e['detail'] else yr
+        out.append(f"- **{e['degree']}** · {e['school']} · {tail}")
+
+    for line in bullets.get('publications_activity', []):
+        out += ["", f"**Writing:** {line}"]
+
+    return "\n".join(out) + "\n"
 
 
 def main() -> int:
@@ -472,9 +536,15 @@ def main() -> int:
     ap.add_argument('--input', type=Path,
                     help='render a tailored résumé markdown (single summary, '
                          'custom order/skills) instead of a master-resume.md target')
+    ap.add_argument('--emit-base', action='store_true',
+                    help='with --target: write the target as a reusable base '
+                         'résumé markdown (--input format) to --out, no render')
+    ap.add_argument('--docx-only', action='store_true',
+                    help='write .docx and skip the internal soffice PDF step '
+                         '(convert later in one batched docx_to_pdf.py call)')
     args = ap.parse_args()
 
-    if not TEMPLATE.exists():
+    if not TEMPLATE.exists() and not args.emit_base:
         sys.exit(f"template not found: {TEMPLATE}")
 
     if args.input:
@@ -483,7 +553,7 @@ def main() -> int:
         if not args.input.exists():
             sys.exit(f"input not found: {args.input}")
         bullets, plan = parse_tailored(args.input.read_text(encoding='utf-8'))
-        render_target('tailored', args.out, bullets, plan)
+        render_target('tailored', args.out, bullets, plan, docx_only=args.docx_only)
         return 0
 
     if not MASTER.exists():
@@ -491,17 +561,26 @@ def main() -> int:
 
     bullets, plans = parse_master(MASTER.read_text(encoding='utf-8'))
 
+    if args.emit_base:
+        if not args.target or not args.out:
+            ap.error("--emit-base requires --target <name> --out <file.md>")
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(emit_base(bullets, plans[args.target]), encoding='utf-8')
+        print(f"{args.target} base → {args.out}")
+        return 0
+
     if args.all:
         for target in sorted(plans):
             out = args.outdir / f'2026-06-30-wsgong-resume-{target}.pdf'
-            render_target(target, out, bullets, plans[target])
+            render_target(target, out, bullets, plans[target], docx_only=args.docx_only)
         return 0
 
     if not args.target:
         ap.error("supply --target <name> --out <path> or --all")
     if not args.out:
         ap.error("--target requires --out")
-    render_target(args.target, args.out, bullets, plans[args.target])
+    render_target(args.target, args.out, bullets, plans[args.target],
+                  docx_only=args.docx_only)
     return 0
 
 
