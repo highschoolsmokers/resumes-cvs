@@ -1,39 +1,64 @@
-# Résumés & CVs — a fast, grounded job-application tailor
+# Résumés & CVs
 
-Bring a job-listing URL (or a list of them). Get back a tailored résumé PDF and
-a cover-letter PDF per listing, in a house Swiss/Inter style, with every claim
-traceable to a file you control — no hallucinated bullets, no invented company
-facts. **You** upload the applications; the tool never submits.
+Given one or more job descriptions, the tool produces a tailored résumé and cover
+letter for each, and keeps a LinkedIn profile in step with the master résumé.
+Every claim traces to your own material; nothing is invented, nothing is
+auto-submitted. Markdown-first: no scraping, no queue, no tracker.
 
-Markdown-first and deliberately small: no scraping pipeline, no queue, no
-tracker.
+## Where things live
 
-## The single source of truth
+- **[`SPEC.md`](SPEC.md)** — the system: workflow, cover-letter shape, LinkedIn sync, implementation.
+- **`profile.md`** — you: goal, positioning, targeting, résumé style, voice, channel.
+- **`master-resume.md`** — the source-of-truth résumé; tailoring subtracts and reorders from it.
+- **`CLAUDE.md`** — session-loaded pointer to `SPEC.md`.
 
-Everything — the design, the operating playbook, and the cover-letter voice —
-lives in **[`SPEC.md`](SPEC.md)**. Start there:
-
-- **What it is & why** — SPEC §§1–10
-- **How to run it** (setup, the one-listing and batch workflows, conventions) — SPEC §16
-- **Cover-letter shape + voice** — SPEC §11 and §17
-- **Résumé style** — SPEC §13
-
-`CLAUDE.md` is a thin session-loaded pointer to `SPEC.md`.
-
-## Setup (short version)
+## Setup
 
 ```bash
-brew install --cask libreoffice font-inter                              # PDF render + embedded font
-python3 -m venv .venv && .venv/bin/pip install python-docx PyYAML pypdf  # for build_cover_letter.py / merge_pdfs.py
+brew install --cask libreoffice font-inter
+python3 -m venv .venv && .venv/bin/pip install python-docx PyYAML pypdf
 ```
 
-`build_cover_letter.py` and `merge_pdfs.py` run via `.venv/bin/python`; the other
-scripts run on system `python3`. Full commands are in SPEC §16.
+`build_cover_letter.py` and `merge_pdfs.py` run via `.venv/bin/python`; the rest
+on system `python3` (3.11+). Full commands are in SPEC "Implementation".
+
+## One listing
+
+```bash
+python3 scripts/url_ingest.py "<greenhouse|lever|ashby URL>" --no-commit
+```
+
+Then, in Claude Code: tailor `resume.md` from the matching base, write and approve
+the cover letter, render both to PDF, and merge. LinkedIn and generic URLs come
+back as stubs needing a browser fetch or a pasted JD.
+
+## A batch
+
+```bash
+/batch-apply <url1> <url2> ...
+```
+
+Ingests all URLs, tailors each in parallel, renders every PDF in one LibreOffice
+pass, and prints a review table. Nothing is submitted.
+
+## LinkedIn sync
+
+```bash
+python3 scripts/linkedin_export.py --target education --out linkedin-profile.md --json linkedin-profile.json
+python3 scripts/linkedin_apply.py                        # dry-run: shows every change, saves nothing
+python3 scripts/linkedin_apply.py --commit --experience  # applies, confirming before each save
+```
+
+`linkedin_export.py` maps `master-resume.md` onto LinkedIn's fields at its
+character limits. `linkedin_apply.py` pushes headline, About, and experience
+descriptions onto the live profile via real Chrome (needs Playwright + Chrome).
+Own profile only; dry-run by default; confirms before each save. Automating
+profile edits crosses LinkedIn's terms — one-time, supervised, self-owned use.
 
 ## Two rules the tool never breaks
 
-1. **Every concrete claim is grounded.** Résumé lines trace to `master-resume.md` / a base; cover-letter facts to the JD or durable knowledge. Unsourced → flagged `[NEEDS SOURCE]`, and `build_cover_letter.py` refuses to render.
-2. **You submit.** Uploading an application and sending any outreach are always manual. The tool produces artifacts; you cross the line.
+1. **Grounded.** Every résumé line traces to `master-resume.md` or a base; every cover-letter fact to the JD or durable knowledge. Unsourced → `[NEEDS SOURCE]`, and the build refuses to render.
+2. **You submit.** Uploading applications and sending outreach are manual. The one live action is the LinkedIn sync — your own profile, confirmed per save.
 
 ## License
 
