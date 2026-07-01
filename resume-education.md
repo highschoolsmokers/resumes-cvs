@@ -37,17 +37,25 @@ San Francisco State University · 2023–2025 · San Francisco, CA
 Slack Technologies · 2017–2020 · San Francisco, CA
 
 - Wrote the API references, SDK guides, and platform tutorials used across its platform; built internal Web API tooling that external developers adopted as official documentation examples.
-- Owned QA end to end for eight feature teams (Block Kit, Workflows, platform APIs) in the Platform QA organization; directed four staff/senior engineers, promoted three.
+- First QA engineer on the Slack Platform: owned QA end to end for eight feature teams (Block Kit, Workflows, platform APIs) in the Platform QA organization, tested the public API, directed four staff/senior engineers, promoted three.
+
+### Security Product QA (Contract)
+Confidential (under NDA) · 2017 · Remote
+
+- Abuse-case testing for a security product: designed scenarios validating that it flagged known exploits from public catalogs (CISA, Exploit-DB).
 
 ### Senior SDET
 Appthority (acquired by Symantec) · 2015–2017 · San Francisco, CA
 
-- Full-stack E2E testing platform (Cucumber, Rails, Selenium, Circle CI). Authored API specs, test plans, and architecture records that transferred intact through the acquisition.
+- First QA hire; defined the testing approach and infrastructure for an MDM-based mobile security product that profiled apps by their behavior: installed on a device, captured pcap-level traffic, generated risk reports.
+- Learned R to audit those reports for the false positives and inconsistencies that meant the collection pipeline, not the app, was at fault.
+- Built the E2E automation (Cucumber, Rails, Selenium, Circle CI) and authored API specs and architecture records that transferred intact through the acquisition.
 
 ### Senior Quality Assurance Engineer
 GoPro · 2012–2015 · San Mateo, CA
 
-- Ruby REST API testing framework with OAuth; custom gem for automated RSpec generation. Built the org-wide JMeter performance practice; cut load-testing time 70%.
+- First SDET on a team of manual testers. Built a Ruby REST API testing framework with OAuth and a custom gem for automated RSpec generation; adversarial testing of the platform's file-upload service.
+- Established the org-wide JMeter performance practice; cut load-testing time 70%.
 
 ### Previous Experience
 

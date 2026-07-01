@@ -1,12 +1,17 @@
 # SPEC — Job Search System v2
 
 **Owner:** W.S. Gong
-**Status:** current. Single source of truth. Supersedes the v1 specs in `archive/v1/`.
+**Status:** current. **Single source of truth** — this one file integrates the
+former `CLAUDE.md` operating playbook, `voice.md`, and `README.md`. Supersedes
+the v1 specs in `archive/v1/`.
 **Date:** 2026-06-30
 
-The core (§§1–8) is intentionally short. §§9–13 are the folded-in detail
-(batch flow, cover letters, résumé style, anti-patterns). If the *core* grows
-past two pages of machinery, we've drifted — stop and cut.
+Read this file top to bottom before operating the system. §§1–15 are *what it is
+and every rule*; §16 is *how to run it*; §17 + the **Voice config** appendix are
+the cover-letter voice (the appendix is machine-parsed — see the note there).
+`CLAUDE.md` is a thin pointer to this file; `README.md` is the repo's front door.
+If the *core* (§§1–8) grows past two pages of machinery, we've drifted — stop and
+cut.
 
 ---
 
@@ -66,7 +71,8 @@ You bring the job (a listing URL, or several); the system turns it around fast.
 ```
 1. Paste one or more job-listing URLs (Greenhouse / Lever / Ashby fetch
    automatically; LinkedIn / generic need a browser fetch or a pasted JD).
-2. System reads: the JD + the matching résumé base + voice.md + voice/ samples.
+2. System reads: the JD + the matching résumé base + the voice config (§17 +
+   appendix) + voice/ samples.
 3. Out comes, per listing:
    - a tailored résumé (markdown → Swiss PDF, JD-keyword-aware)
    - a cover letter in his voice (grounded in his real past letters)
@@ -75,8 +81,8 @@ You bring the job (a listing URL, or several); the system turns it around fast.
 5. Render to PDF. You upload to the portal yourself. Nothing is auto-submitted.
 ```
 
-For a **single** URL, do the steps by hand (ingest → tailor → render). For a
-**list**, use the batch flow in §9.
+For a **single** URL, do the steps by hand (ingest → tailor → render; commands in
+§16). For a **list**, use the batch flow in §9.
 
 Design principles:
 
@@ -95,17 +101,19 @@ resume-qa.md              # target base: QA / SDET
 resume-devdocs.md         # target base: Dev Docs / DX (primary)   ┐ generated from master via
 resume-education.md       # target base: Developer Education        │ render_resume.py --emit-base
 resume-fde.md             # target base: Forward-Deployed Engineering ┘
-voice.md                  # cover-letter voice + letterhead/length/forbidden-phrase config
 voice/                    # his real letters, for voice matching (gitignored)
 applications/             # one folder per job: listing + tailored outputs (gitignored)
 scripts/                  # render + ingest tooling (see §7)
 resume-template.docx      # the Swiss/Inter master template the engine renders into
-SPEC.md                   # this file
-CLAUDE.md                 # operating playbook for the coding agent
+SPEC.md                   # this file — the single source of truth (design + playbook + voice)
+CLAUDE.md                 # thin pointer to SPEC.md (auto-loaded each session)
+README.md                 # repo front door (points here)
 ```
 
 `applications/*` and `voice/` are gitignored (private working content). The
-target bases, `master-resume.md`, `voice.md`, and the specs are tracked.
+target bases, `master-resume.md`, and `SPEC.md` are tracked. The cover-letter
+voice config that used to live in `voice.md` is now §17 + the **Voice config**
+appendix of this file.
 
 ---
 
@@ -118,21 +126,23 @@ target bases, `master-resume.md`, `voice.md`, and the specs are tracked.
 - `url_ingest.py <URL> --no-commit` — detect source; fetch Greenhouse/Lever/Ashby via ATS JSON APIs (no browser); LinkedIn/generic emit a stub `listing.json` flagged `requires_chrome_mcp` / `requires_user_fill`. Writes `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.{json,md}`.
 - `batch_ingest.py <URL...>` — ingest a list; prints a JSON manifest (folder, company, title, source, stub flags). Drives §9.
 - `render_resume.py --input <resume.md> --out <resume.pdf>` — render a tailored résumé. `--target <t> --out <pdf>` renders a master target directly. `--emit-base --target <t> --out <md>` regenerates a target base. `--docx-only` stops at `.docx` (for batched PDF rendering).
-- `build_cover_letter.py --input <cover-letter.md> --out <cover-letter.docx>` — reads `voice.md` (letterhead, length hard-max, forbidden phrases); aborts on `[NEEDS SOURCE]`.
+- `build_cover_letter.py --input <cover-letter.md> --out <cover-letter.docx>` — reads this file's voice config (letterhead, length hard-max, forbidden phrases); aborts on `[NEEDS SOURCE]`. Run via `.venv/bin/python`.
 - `docx_to_pdf.py <docx...>` — converts many docx to PDF in **one** LibreOffice invocation (soffice is single-instance; never run two concurrently).
+- `merge_pdfs.py <out.pdf> <in1.pdf> <in2.pdf>` — merge résumé + cover letter into a `combined.pdf` (résumé first). Output path is the **first** argument.
+- `lint_resume.py <docx>` — standalone Swiss-style résumé linter. `voice_lint.py` — cover-letter voice linter (reads this file's Forbidden-phrases config).
 
 Truthfulness / quality bar (how we know an artifact is good):
 
 - A recruiter can tell in 6 seconds which lane he's in.
 - Every résumé line traces to `master-resume.md` / the base; nothing invented.
-- The cover letter would pass as written by him.
+- The cover letter would pass as written by him (because he writes it — §11).
 - He changes **< 10%** before sending.
 
 ---
 
 ## 8. Trust boundary
 
-The agent produces artifacts. **The human uploads them.** Never auto-submit, never fill a portal form, never send an outreach message on his behalf. This is non-negotiable and applies to the batch flow too.
+The agent produces artifacts. **The human uploads them.** Never auto-submit, never fill a portal form, never send an outreach message or email on his behalf. This is non-negotiable and applies to the batch flow too.
 
 ---
 
@@ -144,7 +154,7 @@ listing, fast, in one interactive session. Driven by the `/batch-apply` command.
 Sequence (only the tailoring fans out; soffice is fenced to one final step):
 
 1. **Ingest** — `batch_ingest.py <urls…>` → JSON manifest. No git (`--no-commit`; `applications/*` gitignored). Partition **tailorable** vs. **stub** (LinkedIn/generic); surface stubs as "needs a browser fetch or a pasted JD" and continue.
-2. **Fan out** — one `batch-apply-worker` subagent per tailorable folder, **all in one message**, concurrent. Each worker: classify the target (§10), copy that base, light-tune to the JD (reorder must-haves first, drop irrelevant entries, tune skills/summary wording — subtract/reorder only, never invent), write `resume.md` + `cover-letter.md`. Workers render nothing and touch no git. Cap concurrency at ~5 per wave for large lists.
+2. **Fan out** — one `batch-apply-worker` subagent per tailorable folder, **all in one message**, concurrent. Each worker: classify the target (§10), copy that base, light-tune to the JD (reorder must-haves first, drop irrelevant entries, tune skills/summary wording — subtract/reorder only, never invent), write `resume.md` + `cover-letter.md`. Workers render nothing and touch no git. Cap concurrency at ~5 per wave for large lists. **Note:** the auto-written cover letter conflicts with the he-writes-the-voice rule (§11); batch cover letters are drafts he must rewrite, not send-ready.
 3. **Render** — main session only. Build all `.docx` (no soffice): `build_cover_letter.py` per folder, `render_resume.py --input --docx-only` per folder. Then **one** `docx_to_pdf.py <all docx>` call → every PDF in a single soffice invocation.
 4. **Review** — print a table (Company | Role | Target | Gaps | résumé.pdf | cover-letter.pdf) plus the stub list. Nothing is submitted; the human uploads each.
 
@@ -181,28 +191,41 @@ Never send one blended résumé. Pick the matching base per application.
 
 ## 11. Cover letters
 
-**The job of the letter:** show, in his restrained voice, that he read the
+**The job of the letter.** Show, in his restrained voice, that he read the
 listing and that his background fits it. Not a sales pitch, not an enthusiasm
 contest. A reader should finish thinking "he read this and can do the work," not
 "he really wants this."
 
-**Shape.** Three short paragraphs, 250–350 words, signed.
+**Who writes it.** He does. The agent reads the JD and the chosen résumé base,
+supplies the facts and the structure, and proposes a draft **inline in chat**
+for him to approve or rewrite. Only after he approves does it get written to
+`cover-letter.md`, grammar-passed, voice-linted, and rendered. Never generate
+the final prose from scratch; never write the file or render before he signs off
+on the words.
 
-1. **His own framing.** Why the role fits, plainly, in a sentence or two. Name the role and company so it's obviously not a form letter. That's the whole opening — no warm-up.
+**Shape.** ~180–300 words, signed. An opening framing paragraph, a fit
+paragraph, and — optionally — a short closing paragraph.
+
+1. **Opening framing.** Why the role fits, plainly, in a sentence or two. Name the role and company so it is obviously not a form letter. That is the whole opening: no warm-up.
 2. **The fit.** Take the two or three things the JD actually asks for and map real work to them: what he did, what happened. Pick the strongest matches; don't answer every bullet.
-3. **Close.** One thing he'd want to talk through, or bring early. Then stop.
+3. **The close (optional).** One short paragraph stating how he works, as plain fact: curiosity, finding defects, fixing the process that let one through. Allowed *only* when it states settled temperament. The moment it looks forward and offers unrequested work ("the first thing I'd do…"), it is a plan-close and is banned (see below). A letter may end on the fit paragraph instead; both are correct. The known-good `voice/qa-cover-letter.md` has no close; `voice/pinterest-sdet-cover-letter.md` has one.
 
-**Voice.** Calibrated from the real letters in `voice/`, not from rules. The only mechanical rules: plain, declarative, past tense for finished work, one idea per sentence; no em-dashes (job-search register); concrete nouns over adjectives.
+**Voice.** Calibrated from the real letters in `voice/`, not from rules (the sound is spelled out in §17). The only mechanical rules: plain, declarative; past tense for finished work; one idea per sentence; first-person past-tense facts only; concrete nouns over adjectives; no em-dashes (job-search register).
 
-**Never** (see also §12):
+**Never:**
 
 - **Quote the company's own words back at them.** No press releases, marketing copy, or mission-statement language. This was the v1 tell that read as bullshit. Permanent.
 - **Company news as a hook.** Facts in the body must be durable, not timely.
-- **"What excites me about / drew me to / pulled me to."**
+- **Marketing-copy openings.** "What excites me about / drew me to / pulled me to."
+- **The plan-close.** "The first thing I'd do is…," "what I'd want to own first…." Juvenile as a form and formulaic enough to read as AI-written; nobody asked for a plan. (Distinct from the allowed disposition close, which states settled temperament and looks backward, not forward.)
+- **Lecturing their needs.** No "X needs Y," no maxims or aphorisms. His facts only; nothing explains its own relevance to the reader.
 - **Oversell.** A claim stays only if demonstrably true; otherwise the plain fact. No "this sounds like a dream," no thanking them for reading.
-- **Fog and filler** ("passionate about," "leveraging," "dynamic team," "results-driven"). If it could appear in anyone's letter, cut it.
+- **Self-grading his own prose.** State the credential or artifact plainly ("MFA in Creative Writing"); never tell the reader his writing is good.
+- Plus the cross-cutting voice failures in §12 (fog verbs, keyword soup, the cute aphorism, the "X in; Y out" tic).
 
-**Grounding.** Voice from `voice/`. Fit claims from the chosen résumé base. Company facts from the JD or durable knowledge — never invented; the letter works on JD detail alone. `build_cover_letter.py` reads `voice.md` for the letterhead, the 250–350 target + 500 hard-max, and the forbidden-phrase warn-list, and aborts on any `[NEEDS SOURCE]` marker.
+**Grounding.** Voice from `voice/`. Fit claims from the chosen résumé base. Company facts from the JD or durable knowledge — never invented; the letter works on JD detail alone. `build_cover_letter.py` reads this file's **Voice config** appendix for the letterhead, the length target + hard-max, and the forbidden-phrase warn-list, and aborts on any `[NEEDS SOURCE]` marker.
+
+**Known-goods.** `voice/qa-cover-letter.md` (no close) and `voice/pinterest-sdet-cover-letter.md` (disposition close). Calibrate every new letter against both.
 
 ---
 
@@ -218,7 +241,8 @@ The catalog of voice and content failures that made v1 read as bullshit. **The f
 - **Self-assessment flourishes.** Grading his own prose: "so the test plans read clearly," "keeps the bug reports sharp," "and it shows in how I document it." Corny and unverifiable. → State the credential or artifact plainly and stop ("MFA in Creative Writing." / "I write the bug reports and test plans."). Never tell the reader his writing is good; the writing does that or it doesn't.
 - **The "X in; Y out" tic.** Pipeline-poetry standing in for substance. → One plain sentence.
 - **Em-dashes (job-search register).** Colons, semicolons, parens, periods; en-dashes for ranges only. His literary voice uses them freely — this ban is job-search prose only.
-- **Marketing-copy openings** (cover letters). No company news, no "what excites me about," no quoting their marketing back. Permanent. → Open with his own framing; durable company facts only.
+
+(Cover-letter-specific anti-patterns — marketing-copy openings, the plan-close, lecturing their needs — live in §11 Never, where the whole letter policy is consolidated.)
 
 **Structure & positioning**
 
@@ -247,7 +271,7 @@ the template is the enforcement, the linter is the check.
 - **Per-entry stack:** role title → company → description. No inline `**Company** — Title` mixed-weight headers; hierarchy comes from the stack.
 - **List sections** (Skills, Education, etc.): each item is its own paragraph, `**Label** — value`, no bullet characters.
 
-**Forbidden:** a second type family; mixed-weight inline headers; accent anywhere but name/tagline/links; typed bullet characters; off-lattice spacing; fixed row heights. Any deviation needs explicit user sign-off (CLAUDE.md §6).
+**Forbidden:** a second type family; mixed-weight inline headers; accent anywhere but name/tagline/links; typed bullet characters; off-lattice spacing; fixed row heights. Any deviation needs explicit user sign-off (§16, Conventions).
 
 Referred to as **W.S. Gong** (not Billy) in all résumé/CV contexts. Two pages allowed.
 
@@ -255,7 +279,7 @@ Referred to as **W.S. Gong** (not Billy) in all résumé/CV contexts. Two pages 
 
 ## 14. Retired in v2 (the kill list)
 
-Removed as complexity with no payoff for this goal (archived in git history / `archive/v1/`):
+Removed as complexity with no payoff for this goal (archived in git history / `archive/v1/`). Do not resurrect any of it:
 
 - search agent + fit-scorer + `search/` + `seen.db` + `sites.yaml` (no scraping; you bring the URL)
 - tracker + `sweep.py` + Apple Mail automation + dashboard; scheduler + Calendar; reply-drafter + `personal-facts.yaml`
@@ -280,3 +304,151 @@ Removed as complexity with no payoff for this goal (archived in git history / `a
 **Open:**
 
 - Render target: keep the Inter/#D44500 Swiss style (default), or a fresh look?
+
+---
+
+## 16. Operating playbook (how to run it)
+
+The counterpart to §§1–15's *what*: this is *how* to operate the system. If this
+section and the rules above ever disagree, the rules win; fix this section.
+
+### Environment & setup
+
+- **Python 3.11+.** `.venv` (gitignored) is only needed by `build_cover_letter.py`; the other scripts run on system `python3`.
+- **LibreOffice** for PDF; **Inter** font embedded at build time.
+
+```bash
+brew install --cask libreoffice font-inter                       # PDF render + embedded font
+python3 -m venv .venv && .venv/bin/pip install python-docx PyYAML pypdf   # for build_cover_letter.py / merge_pdfs.py
+```
+
+- **Fetching:** ATS APIs (Greenhouse/Lever/Ashby) need no browser. LinkedIn/generic listings need a Chrome/Playwright fetch or a pasted JD (they ingest as stubs until then). For JS-rendered or bot-walled listing pages, reach for a reader proxy early rather than cycling browser tools.
+
+### One listing, by hand
+
+```bash
+# 1. Ingest (Greenhouse/Lever/Ashby via ATS APIs; add --company/--title if the source is generic).
+python3 scripts/url_ingest.py "<URL>" --no-commit
+```
+
+Then, in Claude Code: tailor `resume.md` (copy the matching target base per §10
+and light-tune to the JD — subtract/reorder, never invent), propose the cover
+letter inline for his approval (§11), and render:
+
+```bash
+python3 scripts/render_resume.py --input applications/<Co>/<role>-<date>/resume.md --out applications/<Co>/<role>-<date>/resume.pdf
+.venv/bin/python scripts/build_cover_letter.py --input applications/<Co>/<role>-<date>/cover-letter.md --out applications/<Co>/<role>-<date>/cover-letter.docx
+python3 scripts/docx_to_pdf.py applications/<Co>/<role>-<date>/cover-letter.docx
+.venv/bin/python scripts/merge_pdfs.py applications/<Co>/<role>-<date>/combined.pdf applications/<Co>/<role>-<date>/resume.pdf applications/<Co>/<role>-<date>/cover-letter.pdf
+```
+
+Return the path to the application **folder** when done, not just one file.
+
+### A list of listings
+
+Paste the URLs to the `/batch-apply` command (`.claude/commands/batch-apply.md`);
+it runs §9. Nothing is submitted; the human uploads each.
+
+### Conventions
+
+- **Naming:** lowercase kebab, ISO dates — `senior-dx-engineer-2026-07-01/`. Company folder keeps its name.
+- **Branches:** `main` is always submittable. Do feature work on a branch; fast-forward `main` and push when done. Never `git push --force` to `main`.
+- **Commits:** `<area>: <verb> <object>`, one logical change each. End messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. Commit only when asked.
+- **Git identity:** local to this repo (`git config user.name/.email`, no `--global`). Default `W.S. Gong <billygong@me.com>`.
+- **`.gitignore`:** `applications/*` (except `_template/`), `voice/`, `.venv/`, `.DS_Store`, populated `config/`. Never commit private working content or a rendered PDF you didn't mean to. To track something under a gitignored path, refactor the path — don't add an exception.
+- **Shell:** commands must be zsh-friendly (this repo's shell is zsh).
+- **Style sign-off:** don't change the résumé font, accent, or template (§13) without explicit sign-off.
+
+---
+
+## 17. Cover-letter voice — the sound
+
+How a W.S. Gong cover letter *sounds*, calibrated from the real letters in
+`voice/` (gitignored). §11 is the *shape* (job, structure, anti-patterns); this
+is the sound. It is the cover-letter counterpart to `master-resume.md`: the
+source a tailored letter is written against. The machine-parsed config blocks
+follow in the **Voice config** appendix.
+
+Restraint is the default. The `voice/` samples under-sell more than they sell:
+"the highly unlikely event that I make it out of the slush pile," "if not,
+that's perfectly okay." Carry that. A reader should finish thinking he can do
+the work, not that he wants it.
+
+Plain and economical. Short declaratives, concrete nouns, no warm-up. One idea
+per sentence. Past tense for finished work.
+
+Specific, always. Every sample names the actual thing: the journals (Fourteen
+Hills, Guernica), the bookstores (Chaucer, Borders), the platforms (WordPress,
+REST). The strongest move in all three is the same one: read the listing, find
+a concrete need, map a real ability to it ("I noticed there is a process by
+which to set up pickup orders... I could research incorporating the inventory
+system"). That move is the spine of the fit paragraph.
+
+The warm bookends in the samples do NOT carry over to a job-search letter. Strip
+the thank-you openings, the gush ("this position sounds like a dream," "I love X
+and would cherish the opportunity"), and the apology closes ("thank you for
+reading my rambling cover letter"). Those belong to his personal and literary
+register; the headers in each `voice/` file mark which register the sample is.
+
+No em-dashes here. The job-search register uses colons, semicolons, parentheses,
+periods; his literary voice uses em-dashes freely, but a cover letter is not the
+literary voice.
+
+**Professional-register samples.** `voice/qa-cover-letter.md` and
+`voice/pinterest-sdet-cover-letter.md` are the known-goods in the register
+job-search letters actually use: distilled, first-person past-tense facts, named
+tools, no thesis-line openers or windups. Calibrate against both. The Pinterest
+sample sanctions a short **closing paragraph** the first sample lacked: a
+restrained statement of disposition (curiosity, finding defects, fixing the
+process that let one through) is allowed, so long as it stays a plain fact and
+never becomes a plan-close, a windup, gush, or a self-grade. The three literary
+samples in `voice/` are a warmer, different register; do not copy their bookends
+into a job-search letter.
+
+---
+
+## Voice config
+
+The three blocks below — **Letterhead**, **Length**, **Forbidden phrases** — are
+parsed at render time by `scripts/build_cover_letter.py` and `scripts/voice_lint.py`
+(they read this file, splitting on these `##` headings), the same way
+`render_resume.py` parses `master-resume.md`. Keep the heading names exactly as
+they are, or the parser won't find them.
+
+## Letterhead
+
+- **Name:** W.S. Gong
+- **Subhead:** Developer. Writer, Editor.
+- **Contact:** San Francisco, CA · billygong@me.com · ws-gong.com/code · linkedin.com/in/billy-gong
+
+## Length
+
+- **Target:** 180–300 words
+- **Hard max:** 500 words
+
+## Forbidden phrases
+
+Warn-only at render. Each is a generic tell. Keep this list short: per §12 the
+fix for bad voice is fewer rules and more real examples, not a longer list.
+
+- passionate about
+- dynamic team
+- wear many hats
+- results-driven
+- team player
+- self-starter
+- think outside the box
+- synergy
+- leverage my
+- thank you for your consideration
+- i look forward to hearing from you
+- i am writing to apply
+- i am writing to express
+- fast-paced environment
+- bring to the table
+- what excites me about
+- what drew me to
+- what pulled me to
+- the thing i would
+- the thing that
+- from nothing

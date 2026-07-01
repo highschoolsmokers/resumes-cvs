@@ -407,7 +407,10 @@ def build_experience_entries(plan: dict, bullets: dict) -> list[tuple]:
 
         start = role.get('start', '')
         end = role.get('end', '')
-        date_line = f"{start}–{end}".upper() if start or end else ""
+        if start and end and start != end:
+            date_line = f"{start}–{end}".upper()
+        else:
+            date_line = (start or end).upper()
         loc_line = (role.get('location') or '').upper()
         company = xml_escape(role.get('employer', ''))
         title_alts = role.get('title_alternates') or {}
