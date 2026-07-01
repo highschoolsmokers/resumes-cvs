@@ -22,7 +22,7 @@ contains `listing.md` + `listing.json`. Read these first, in order:
 4. `master-resume.md` — the résumé parse contract lives in its top HTML comment
    (`### Title` / meta line `Employer · dates · location` / `- ` bullets). Also
    your ground truth: never claim anything not traceable to a base or the master.
-5. `voice.md` — the cover-letter voice, letterhead, length, and forbidden phrases.
+5. `SPEC.md` §11 + §17 + the **Voice config** appendix — the cover-letter shape, voice, letterhead, length, and forbidden phrases.
 
 ## Step 1 — classify the target
 
@@ -58,15 +58,17 @@ NOTHING, and return the JSON with empty file fields and a one-line reason in
 
 ## Step 3 — write `<folder>/cover-letter.md`
 
-- Follow SPEC §11 shape: three short paragraphs, 250–350 words, signed `W.S. Gong`.
-  Format: `Dear <team/role>,` / blank-line-separated body paragraphs / `W.S. Gong`.
+- Follow SPEC §11 shape: ~180–300 words, signed `W.S. Gong`. Format:
+  `Dear <team/role>,` / blank-line-separated body paragraphs / `W.S. Gong`.
 - Open with W.S.'s own framing of why the role fits — name the role and company,
-  no warm-up. Map two or three of the JD's real asks to real work from the chosen
-  base. Close on one concrete thing he'd do first. Then stop.
-- Voice from `voice/` via `voice.md`. **Never** quote the company's marketing/news
+  no warm-up. Then map two or three of the JD's real asks to real work from the
+  chosen base. A letter may end on the fit paragraph, or add one short
+  **disposition close** (settled temperament stated as plain fact). **Never** a
+  plan-close ("the first thing I'd do is…") — that is a banned tell (SPEC §11).
+- Voice from `voice/` (see SPEC §17). **Never** quote the company's marketing/news
   back at them; no "what excites me about"; no forbidden phrases; no em-dashes;
-  body ≤ the `voice.md` hard max (500). No `[NEEDS SOURCE]` markers — if you can't
-  source a concrete noun, drop it.
+  body ≤ the SPEC Voice-config hard max (500). No `[NEEDS SOURCE]` markers — if you
+  can't source a concrete noun, drop it.
 
 ## Return (your final message — raw JSON, nothing else)
 
