@@ -63,9 +63,11 @@ def find_soffice() -> str:
 def convert_batch(docxs: list[Path], out_pdfs: list[Path]) -> list[Path]:
     """Convert a list of .docx files in a single `soffice` invocation.
 
-    LibreOffice writes each PDF next to the input with the same stem. We don't
-    get to choose names through CLI args, so we run into a shared scratch
-    directory and rename into place. One process, one cold start, N files.
+    LibreOffice names each output by the input's stem, so two inputs sharing a
+    stem (e.g. every application folder's `resume.docx`) would collide. We stage
+    each input into one scratch dir under a unique indexed name, run one soffice
+    pass, then move each result to its intended sibling PDF. One cold start, N
+    files, no stem collisions.
     """
     if not docxs:
         return []
@@ -78,29 +80,29 @@ def convert_batch(docxs: list[Path], out_pdfs: list[Path]) -> list[Path]:
         if d.suffix.lower() != ".docx":
             sys.stderr.write(f"docx_to_pdf.py: expected a .docx, got {d.suffix}\n")
             sys.exit(1)
-    # LibreOffice writes outputs to scratch keyed by stem; same stem from two
-    # inputs would collide. Guard against silent overwrite.
-    stems = [d.stem for d in docxs]
-    if len(set(stems)) != len(stems):
-        dupes = sorted({s for s in stems if stems.count(s) > 1})
-        sys.stderr.write(f"docx_to_pdf.py: input files share stems "
-                         f"({', '.join(dupes)}); LibreOffice would overwrite.\n"
-                         "Rename inputs or convert separately.\n")
-        sys.exit(1)
 
-    # Single shared scratch dir at the first output's parent (or /tmp if mixed).
+    # Shared scratch dir at the sole output parent, else /tmp when they differ.
     parents = {p.parent for p in out_pdfs}
-    if len(parents) == 1:
-        scratch_root = next(iter(parents))
-    else:
-        scratch_root = Path("/tmp")
+    scratch_root = next(iter(parents)) if len(parents) == 1 else Path("/tmp")
     scratch_root.mkdir(parents=True, exist_ok=True)
     scratch = scratch_root / ".docx_to_pdf_scratch"
+    if scratch.exists():
+        shutil.rmtree(scratch, ignore_errors=True)
     scratch.mkdir(parents=True, exist_ok=True)
+
+    # Stage inputs under unique stems so same-named files can't overwrite.
+    staged: list[tuple[Path, Path]] = []  # (scratch_pdf, out_pdf)
+    scratch_docxs: list[Path] = []
+    for i, (docx, out_pdf) in enumerate(zip(docxs, out_pdfs)):
+        uniq = f"{i:04d}_{docx.stem}"
+        scratch_docx = scratch / f"{uniq}.docx"
+        shutil.copyfile(docx, scratch_docx)
+        scratch_docxs.append(scratch_docx)
+        staged.append((scratch / f"{uniq}.pdf", out_pdf))
 
     soffice = find_soffice()
     cmd = [soffice, "--headless", "--convert-to", "pdf", "--outdir", str(scratch)]
-    cmd.extend(str(d) for d in docxs)
+    cmd.extend(str(d) for d in scratch_docxs)
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     except FileNotFoundError:
@@ -114,24 +116,20 @@ def convert_batch(docxs: list[Path], out_pdfs: list[Path]) -> list[Path]:
         sys.exit(result.returncode or 3)
 
     produced_paths = []
-    for docx, out_pdf in zip(docxs, out_pdfs):
-        produced = scratch / (docx.stem + ".pdf")
-        if not produced.exists():
+    for scratch_pdf, out_pdf in staged:
+        if not scratch_pdf.exists():
             sys.stderr.write(
-                f"docx_to_pdf.py: LibreOffice ran but produced no PDF for {docx}. "
-                f"Expected {produced}. stdout:\n{result.stdout}\n"
+                f"docx_to_pdf.py: LibreOffice ran but produced no PDF for "
+                f"{out_pdf.name}. Expected {scratch_pdf}. stdout:\n{result.stdout}\n"
             )
             sys.exit(4)
         out_pdf.parent.mkdir(parents=True, exist_ok=True)
         if out_pdf.exists():
             out_pdf.unlink()
-        shutil.move(str(produced), str(out_pdf))
+        shutil.move(str(scratch_pdf), str(out_pdf))
         produced_paths.append(out_pdf)
 
-    try:
-        shutil.rmtree(scratch)
-    except OSError:
-        pass
+    shutil.rmtree(scratch, ignore_errors=True)
     return produced_paths
 
 
