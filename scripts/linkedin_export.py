@@ -49,9 +49,10 @@ LIMITS = {
 
 
 def _no_em_dash(s: str) -> str:
-    """Voice rule (CLAUDE.md): no em-dashes in W.S.'s voice. En-dashes in
-    date/number ranges stay. Replace any em-dash with a colon-spaced form."""
-    return s.replace('—', ': ').replace('  ', ' ').strip()
+    """Voice rule (profile.md, job-search register): no em-dashes. En-dashes in
+    date/number ranges stay. Replace any em-dash with a colon-spaced form and
+    collapse the runs of whitespace that produces."""
+    return re.sub(r'\s{2,}', ' ', s.replace('—', ': ')).strip()
 
 
 def _headline(tagline: str, summary: str) -> str:
@@ -147,7 +148,7 @@ def build_profile(target: str) -> dict[str, Any]:
         'writing': [_no_em_dash(w) for w in bullets.get('publications_activity', [])],
         'links': {
             'website': f"https://{contact['site']}",
-            'linkedin': f"https://{contact['github']}",
+            'linkedin': f"https://{contact['linkedin']}",
         },
     }
 

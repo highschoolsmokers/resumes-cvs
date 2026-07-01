@@ -9,10 +9,11 @@ Batch mode: a single `soffice` invocation converts all inputs in one cold
 start (~3-4s saved per additional file). PDFs are written as siblings of the
 inputs (foo.docx → foo.pdf). `--out` is only meaningful with a single input.
 
-Decision committed in spec §8.6 / CLAUDE.md §4: we use LibreOffice headless,
-not `docx2pdf`. Reason: `docx2pdf` shells out to Word or Pages on macOS and
-those need a GUI session; LibreOffice works from cron / scheduled tasks and
-handles our Inter/#D44500 OOXML identically to what Word renders.
+We use LibreOffice headless, not `docx2pdf` (SPEC.md §9 Implementation).
+Reason: `docx2pdf` shells out to Word or Pages on macOS and those need a GUI
+session; LibreOffice works headless and handles our Inter/#D44500 OOXML
+identically to what Word renders. Each run uses a private `-env:UserInstallation`
+profile so it never contends with another `soffice` instance.
 
 The Homebrew install target is:
     brew install --cask libreoffice
@@ -27,6 +28,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -81,56 +83,59 @@ def convert_batch(docxs: list[Path], out_pdfs: list[Path]) -> list[Path]:
             sys.stderr.write(f"docx_to_pdf.py: expected a .docx, got {d.suffix}\n")
             sys.exit(1)
 
-    # Shared scratch dir at the sole output parent, else /tmp when they differ.
+    # Unique scratch dir + private LibreOffice profile per run, so concurrent
+    # runs and any other open soffice instance never contend for the profile.
     parents = {p.parent for p in out_pdfs}
-    scratch_root = next(iter(parents)) if len(parents) == 1 else Path("/tmp")
+    scratch_root = next(iter(parents)) if len(parents) == 1 else Path(tempfile.gettempdir())
     scratch_root.mkdir(parents=True, exist_ok=True)
-    scratch = scratch_root / ".docx_to_pdf_scratch"
-    if scratch.exists():
-        shutil.rmtree(scratch, ignore_errors=True)
-    scratch.mkdir(parents=True, exist_ok=True)
+    scratch = Path(tempfile.mkdtemp(prefix=".docx_to_pdf_", dir=scratch_root))
+    profile_dir = Path(tempfile.mkdtemp(prefix="soffice_profile_"))
 
-    # Stage inputs under unique stems so same-named files can't overwrite.
-    staged: list[tuple[Path, Path]] = []  # (scratch_pdf, out_pdf)
-    scratch_docxs: list[Path] = []
-    for i, (docx, out_pdf) in enumerate(zip(docxs, out_pdfs)):
-        uniq = f"{i:04d}_{docx.stem}"
-        scratch_docx = scratch / f"{uniq}.docx"
-        shutil.copyfile(docx, scratch_docx)
-        scratch_docxs.append(scratch_docx)
-        staged.append((scratch / f"{uniq}.pdf", out_pdf))
-
-    soffice = find_soffice()
-    cmd = [soffice, "--headless", "--convert-to", "pdf", "--outdir", str(scratch)]
-    cmd.extend(str(d) for d in scratch_docxs)
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    except FileNotFoundError:
-        sys.stderr.write(f"docx_to_pdf.py: could not execute {soffice!r}\n")
-        sys.exit(2)
+        # Stage inputs under unique stems so same-named files can't overwrite.
+        staged: list[tuple[Path, Path]] = []  # (scratch_pdf, out_pdf)
+        scratch_docxs: list[Path] = []
+        for i, (docx, out_pdf) in enumerate(zip(docxs, out_pdfs)):
+            uniq = f"{i:04d}_{docx.stem}"
+            scratch_docx = scratch / f"{uniq}.docx"
+            shutil.copyfile(docx, scratch_docx)
+            scratch_docxs.append(scratch_docx)
+            staged.append((scratch / f"{uniq}.pdf", out_pdf))
 
-    if result.returncode != 0:
-        sys.stderr.write("docx_to_pdf.py: LibreOffice exited non-zero.\n")
-        sys.stderr.write(result.stdout)
-        sys.stderr.write(result.stderr)
-        sys.exit(result.returncode or 3)
+        soffice = find_soffice()
+        cmd = [soffice, f"-env:UserInstallation=file://{profile_dir}",
+               "--headless", "--convert-to", "pdf", "--outdir", str(scratch)]
+        cmd.extend(str(d) for d in scratch_docxs)
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        except FileNotFoundError:
+            sys.stderr.write(f"docx_to_pdf.py: could not execute {soffice!r}\n")
+            sys.exit(2)
 
-    produced_paths = []
-    for scratch_pdf, out_pdf in staged:
-        if not scratch_pdf.exists():
-            sys.stderr.write(
-                f"docx_to_pdf.py: LibreOffice ran but produced no PDF for "
-                f"{out_pdf.name}. Expected {scratch_pdf}. stdout:\n{result.stdout}\n"
-            )
-            sys.exit(4)
-        out_pdf.parent.mkdir(parents=True, exist_ok=True)
-        if out_pdf.exists():
-            out_pdf.unlink()
-        shutil.move(str(scratch_pdf), str(out_pdf))
-        produced_paths.append(out_pdf)
+        if result.returncode != 0:
+            sys.stderr.write("docx_to_pdf.py: LibreOffice exited non-zero.\n")
+            sys.stderr.write(result.stdout)
+            sys.stderr.write(result.stderr)
+            sys.exit(result.returncode or 3)
 
-    shutil.rmtree(scratch, ignore_errors=True)
-    return produced_paths
+        produced_paths = []
+        for scratch_pdf, out_pdf in staged:
+            if not scratch_pdf.exists():
+                sys.stderr.write(
+                    f"docx_to_pdf.py: LibreOffice ran but produced no PDF for "
+                    f"{out_pdf.name}. Expected {scratch_pdf}. stdout:\n{result.stdout}\n"
+                )
+                sys.exit(4)
+            out_pdf.parent.mkdir(parents=True, exist_ok=True)
+            if out_pdf.exists():
+                out_pdf.unlink()
+            shutil.move(str(scratch_pdf), str(out_pdf))
+            produced_paths.append(out_pdf)
+
+        return produced_paths
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+        shutil.rmtree(profile_dir, ignore_errors=True)
 
 
 def convert(docx: Path, out_pdf: Path) -> Path:

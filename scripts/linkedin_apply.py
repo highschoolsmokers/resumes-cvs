@@ -280,8 +280,9 @@ def apply_field(page: Page, name: str, desired: str, commit: bool, confirm: bool
 
 # Experience: sync each position's DESCRIPTION to the résumé. Positions are
 # matched to the profile JSON by company. Titles/dates are left untouched (per
-# the user's choice); The Rumpus and the flat "Earlier experience" list are
-# excluded (the latter has no per-role description in the master).
+# the user's choice). This is an ALLOWLIST — only the positions listed here are
+# synced; anything absent (e.g. The Rumpus, the flat "Earlier experience" list)
+# is left alone by omission, not by explicit skip logic.
 #   (json company substring, company keyword in the LinkedIn edit pencil)
 EXPERIENCE_TARGETS = [
     ("Independent", "Independent"),
@@ -300,9 +301,13 @@ def _open_position(page: Page, keyword: str, details_url: str) -> Locator:
     for _ in range(4):
         page.mouse.wheel(0, 500)
         page.wait_for_timeout(250)
-    pencil = page.locator(
-        f'a[aria-label^="Edit"][aria-label*="{keyword}" i]').first
-    pencil.wait_for(state="visible", timeout=8000)
+    pencils = page.locator(f'a[aria-label^="Edit"][aria-label*="{keyword}" i]')
+    pencils.first.wait_for(state="visible", timeout=8000)
+    # Fail closed on an ambiguous match rather than editing the wrong position.
+    n = pencils.count()
+    if n != 1:
+        raise LookupError(f"expected exactly one edit pencil matching {keyword!r}, found {n}")
+    pencil = pencils.first
     pencil.click()
     field = resolve(page, "editor_field", timeout=12000)
     field.wait_for(state="visible", timeout=8000)
@@ -413,6 +418,10 @@ def main() -> int:
     if not profile_url:
         sys.exit("no profile URL in JSON and none passed via --profile-url")
     profile_url = re.sub(r"^https?://(www\.)?", "https://www.", profile_url).rstrip("/") + "/"
+    # This script edits a LIVE profile — never proceed unless the target is a
+    # personal /in/ profile URL (guards a typo'd or /company/ URL in the source).
+    if not re.match(r"^https://www\.linkedin\.com/in/[^/]+/$", profile_url):
+        sys.exit(f"refusing to run: {profile_url!r} is not a linkedin.com/in/<handle> profile URL")
 
     run_dir = RUNS_DIR / datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir.mkdir(parents=True, exist_ok=True)

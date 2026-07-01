@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Single-listing entry point — skip the bulk search, drop straight into tailoring.
+"""Single-listing entry point — turn one job-listing URL into a listing folder.
 
-Spec §3.8 / CLAUDE.md §2 Phase 2.
+The one-listing on-ramp for the workflow (SPEC.md §2 Workflow).
 
 Usage:
     python scripts/url_ingest.py <URL>
@@ -11,7 +11,7 @@ Usage:
 What this script does:
     1. Detect the source ATS from the URL.
     2. For Greenhouse / Lever / Ashby — hit the public JSON API and normalise
-       to the §3.4 schema.
+       to the listing.json schema.
     3. For LinkedIn and generic URLs — emit a stub listing and print a
        follow-up message explaining the Chrome-MCP / paste-in step the agent
        (or user) has to finish. We never silently accept a half-listing; the
@@ -21,12 +21,9 @@ What this script does:
            applications/<Company>/<role-slug>-<YYYY-MM-DD>/
                listing.json
                listing.md
-    5. Create branch `app/<Company>-<role-slug>-<YYYY-MM-DD>` and emit the
-       git commands for the user to run (we don't touch `.git/` from here —
-       the Cowork sandbox cannot modify it).
-    6. Bypass `search/seen.db` entirely — this is a deliberate, user-initiated
-       action. The listing record carries `"ingest": "manual"` so the audit
-       trail shows how it entered.
+    5. Print the git commands to create the application branch (we don't touch
+       `.git/` from here — the sandbox cannot modify it). The record carries
+       `"ingest": "manual"` so it's clear how the listing entered.
 
 Design choice — no network fallbacks masquerading as success:
     If Greenhouse/Lever/Ashby returns something we can't parse, we dump what
@@ -74,12 +71,13 @@ def detect_source(url: str) -> tuple[str, dict]:
         return "greenhouse", {"token": m["token"], "id": m["id"]}
 
     if host == "jobs.lever.co":
-        m = re.match(r"/(?P<token>[^/]+)/(?P<id>[0-9a-f-]+)", path)
+        # Lever/Ashby IDs are UUIDs, which may contain uppercase hex.
+        m = re.match(r"/(?P<token>[^/]+)/(?P<id>[0-9A-Fa-f-]+)", path)
         if m:
             return "lever", {"token": m["token"], "id": m["id"]}
 
     if host == "jobs.ashbyhq.com":
-        m = re.match(r"/(?P<token>[^/]+)/(?P<id>[0-9a-f-]+)", path)
+        m = re.match(r"/(?P<token>[^/]+)/(?P<id>[0-9A-Fa-f-]+)", path)
         if m:
             return "ashby", {"token": m["token"], "id": m["id"]}
 
@@ -147,7 +145,7 @@ def fetch_ashby(token: str, job_id: str) -> dict:
     api = f"https://api.ashbyhq.com/posting-api/job-board/{token}?includeCompensation=true"
     data = _http_json(api)
     jobs = data.get("jobs") or []
-    match = next((j for j in jobs if j.get("id") == job_id), None)
+    match = next((j for j in jobs if (j.get("id") or "").lower() == job_id.lower()), None)
     if not match:
         raise RuntimeError(
             f"ashby: job {job_id!r} not found in {token!r} board "

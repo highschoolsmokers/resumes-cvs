@@ -4,9 +4,9 @@
 Usage:
     python scripts/merge_pdfs.py <out.pdf> <in1.pdf> <in2.pdf> [in3.pdf ...]
 
-Convention from spec §8.6 / CLAUDE.md §1.5: the resume goes first, the cover
-letter goes second. That produces the `combined.pdf` that lives beside each
-application and is what gets uploaded wherever a single PDF is required.
+Convention (SPEC.md §7 Cover letters / §9 Implementation): the resume goes first,
+the cover letter goes second. That produces the `combined.pdf` that lives beside
+each application and is what gets uploaded wherever a single PDF is required.
 
 If an input PDF is missing or unreadable we fail loud with an actionable
 error rather than silently dropping it.

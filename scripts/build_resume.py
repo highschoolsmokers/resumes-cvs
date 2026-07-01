@@ -183,24 +183,6 @@ def para_label_then_value(label: str, value: str, before: int = 120) -> str:
 '''
 
 
-def para_project(name: str, tech: str, desc: str, before: int = 120) -> str:
-    return f'''          <w:p>
-            <w:pPr>
-              <w:spacing w:before="{before}" w:line="240" w:lineRule="auto"/>
-              <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>
-            </w:pPr>
-            <w:r>
-              <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:b w:val="1"/><w:bCs w:val="1"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:rtl w:val="0"/></w:rPr>
-              <w:t xml:space="preserve">{name} </w:t>
-            </w:r>
-            <w:r>
-              <w:rPr><w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/><w:color w:val="666666"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:rtl w:val="0"/></w:rPr>
-              <w:t xml:space="preserve">({tech}): {desc}</w:t>
-            </w:r>
-          </w:p>
-'''
-
-
 INTER = '<w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/>'
 
 
@@ -362,29 +344,6 @@ def build_skills_inner(plan: dict, bullets: dict) -> str:
     return "".join(chunks)
 
 
-def _default_projects_inner() -> str:
-    """The Projects block is drawn from the generalized resume — it's static."""
-    return "".join([
-        para_project("fabulosa-books",
-            "Next.js, Vercel, Neon Postgres, Vercel AI SDK",
-            "Live multi-agent employee scheduling app for an independent bookstore; "
-            "coordinated specialist agents, not a monolithic LLM call.",
-            before=0),
-        para_project("paperless-mcp / colophon-mcp / lit-verity-mcp",
-            "TypeScript, MCP",
-            "MCP servers for document management, book metadata lookup, and "
-            "truth-grounded literary research."),
-        para_project("lit-research-plugin / historical-research-agent / submission-watcher-agent",
-            "Claude Code plugins",
-            "Plugins for verified literary research, historical research, and "
-            "literary-magazine submission monitoring."),
-        para_project("submission-cli / writer-utilities",
-            "TypeScript, Python",
-            "Manuscript-formatting CLI and an umbrella toolkit for working writers, "
-            "both targeting non-developer audiences."),
-    ])
-
-
 def build_experience_entries(plan: dict, bullets: dict) -> list[tuple]:
     """Produce entry_row tuples for each role the plan references, in plan order.
 
@@ -393,7 +352,7 @@ def build_experience_entries(plan: dict, bullets: dict) -> list[tuple]:
     entries: list[tuple] = []
     target_family = plan.get('target_role_family')
 
-    # Roles appear in the order they're declared in bullets.yaml.
+    # Roles appear in the order they're declared in the source markdown.
     role_order = [r['id'] for r in bullets['roles']]
     plan_roles = plan.get('bullets_by_role') or {}
 
@@ -614,7 +573,7 @@ def render(work: Path, plan: dict, bullets: dict) -> None:
     hyperlinks = {
         'rIdEmail':  f"mailto:{bullets['meta']['contact']['email']}",
         'rIdSite':   f"https://{bullets['meta']['contact']['site']}",
-        'rIdGithub': f"https://{bullets['meta']['contact']['github']}",
+        'rIdGithub': f"https://{bullets['meta']['contact']['linkedin']}",
     }
     new_rels = ''.join(
         f'  <Relationship Id="{rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="{target}" TargetMode="External"/>\n'
@@ -658,9 +617,10 @@ def render(work: Path, plan: dict, bullets: dict) -> None:
     )
     content, _ = drawing_para_pattern.subn('', content)
 
-    # Linkify website / github
+    # Linkify website / linkedin (the rIdGithub relationship is the template's;
+    # the contact field holds the LinkedIn URL).
     site_text   = bullets['meta']['contact']['site']
-    github_text = bullets['meta']['contact']['github']
+    github_text = bullets['meta']['contact']['linkedin']
     city_run_pattern = re.compile(
         r'(<w:p[^>]*w14:paraId="00000007"[^>]*>.*?)'
         r'<w:r\b[^>]*>\s*<w:rPr>.*?</w:rPr>\s*'
@@ -757,8 +717,6 @@ def render(work: Path, plan: dict, bullets: dict) -> None:
         return "".join(rows)
 
     chunks: list[str] = [make_row("Skills", skills_inner)]
-    if plan.get('show_projects', True):
-        chunks.append(make_row("Projects", _default_projects_inner()))
     chunks.append(section_with_entries("Experience", experience_entries))
     chunks.append(section_with_entries("Education", education_entries))
     if plan.get('show_publications', True):

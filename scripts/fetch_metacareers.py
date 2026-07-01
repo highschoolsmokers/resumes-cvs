@@ -5,8 +5,9 @@ metacareers.com renders the JD client-side and hard-blocks non-browser HTTP
 clients (any plain GET gets an "Error" page with no cookies). So we render it
 through the public Jina reader proxy (https://r.jina.ai/<url>), which executes
 the page's JS and returns clean markdown, then parse that markdown into the
-same listing.json / listing.md schema url_ingest.py produces. Downstream
-tailoring runs against it with `requires_user_fill: false`.
+listing.json / listing.md schema url_ingest.py produces (plus a few extra
+Meta-specific keys). Downstream tailoring runs against it with
+`requires_user_fill: false`.
 
 Usage:
     python scripts/fetch_metacareers.py <metacareers-url>

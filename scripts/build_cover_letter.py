@@ -6,11 +6,10 @@ attaches to applications. Typography mirrors the resume's Swiss style: Inter
 single family (hierarchy via weight and size), #D44500 accent. See
 `profile.md` (Résumé).
 
-This is the cover-letter half of the v2 markdown workflow. `SPEC.md`'s **Voice
-config** appendix is the source the same way `master-resume.md` is for
+`profile.md` is the config source the same way `master-resume.md` is for
 `render_resume.py`: its **Letterhead**, **Length**, and **Forbidden phrases**
-sections are parsed here at render time. The letter's *sound* is calibrated from
-`voice/`; its *shape* and anti-patterns live in `SPEC.md` (Cover letters).
+sections are parsed here at render time. The letter's *voice* and *sound* live in
+`profile.md`; its *shape* lives in `SPEC.md` (Cover letters).
 
 Input markdown format:
 
@@ -28,9 +27,9 @@ the last is the signature; everything between is body.
 Guardrails enforced at render time:
 
     - Body word count (excluding salutation and signature) must be
-      <= `SPEC.md` Length "Hard max". Over it, the script aborts.
+      <= `profile.md` Length "Hard max". Over it, the script aborts.
       Under the target floor or over the ceiling prints a WARNING only.
-    - Any hit against a `SPEC.md` Forbidden phrase, or any em-dash, aborts
+    - Any hit against a `profile.md` Forbidden phrase, or any em-dash, aborts
       the render. Enforced, not advisory.
     - Any `[NEEDS SOURCE: ...]` marker aborts the render.
 
@@ -70,7 +69,7 @@ DISPLAY_FONT = "Inter"
 BODY_FONT    = "Inter"
 
 
-# ─── Voice config (parsed from SPEC.md, parallel to render_resume.py) ──
+# ─── Voice config (parsed from profile.md, parallel to render_resume.py) ──
 
 def _split_sections(md: str) -> dict[str, list[str]]:
     """Split a markdown doc on `## ` headings → {heading: [body lines]}."""
@@ -87,11 +86,11 @@ def _split_sections(md: str) -> dict[str, list[str]]:
 
 
 def load_voice(path: Path = VOICE_MD) -> dict:
-    """Parse the render config out of SPEC.md.
+    """Parse the render config out of profile.md.
 
     Reads three sections — Letterhead, Length, Forbidden phrases — into the
     shape the renderer and guardrails consume (letterhead dict, length dict,
-    forbidden_phrases list). The rest of SPEC.md is prose for the writer.
+    forbidden_phrases list). The rest of profile.md is prose for the writer.
     """
     if not path.exists():
         sys.stderr.write(f"build_cover_letter.py: missing {path}\n")
@@ -199,7 +198,7 @@ def check_length(body: list[str], voice: dict) -> int:
     if count > hard_max:
         sys.stderr.write(
             f"build_cover_letter.py: body is {count} words; "
-            f"SPEC.md hard max is {hard_max}. Cut and rerun.\n"
+            f"profile.md hard max is {hard_max}. Cut and rerun.\n"
         )
         sys.exit(2)
     if count < target_min:
@@ -219,7 +218,7 @@ def check_length(body: list[str], voice: dict) -> int:
 def check_forbidden(body: list[str], voice: dict) -> list[str]:
     """Hard-fail the render on any forbidden phrase or em-dash. Enforced, not
     advisory: a draft carrying a known voice tell will not render, the same way
-    a `[NEEDS SOURCE]` marker aborts. Keep the tell list in SPEC.md short and
+    a `[NEEDS SOURCE]` marker aborts. Keep the tell list in profile.md short and
     high-precision (profile.md Voice: the fix for bad voice is fewer rules + real
     examples) so this gate never blocks a legitimate letter."""
     phrases = voice.get("forbidden_phrases") or []

@@ -58,7 +58,7 @@ def first_sentence(paras: list[str]) -> str:
     return re.split(r"(?<=[.?!])\s", paras[0], maxsplit=1)[0]
 
 
-# ─── forbidden phrases from SPEC.md (promoted from warn → fail) ───────────
+# ─── forbidden phrases from profile.md (promoted from warn → fail) ───────────
 
 def load_forbidden(path: Path = VOICE_MD) -> list[str]:
     if not path.exists():
@@ -121,7 +121,7 @@ RULES = [
     ("fronted-time-opener", "first sentence must not open with a time-span hook (\"I have spent N years...\")", _rule_fronted_time_opener),
     ("rote-application-open", "no \"I am writing to apply/express\" / \"I'm applying for\" (\"interested in\" is fine)", _rule_rote_application),
     ("clipped-role-pointer", "no \"That's the ___ role\" clipped pivot", _rule_clipped_role_pointer),
-    ("forbidden-phrase", "no phrase from SPEC.md → Forbidden phrases", _rule_forbidden),
+    ("forbidden-phrase", "no phrase from profile.md → Forbidden phrases", _rule_forbidden),
 ]
 
 

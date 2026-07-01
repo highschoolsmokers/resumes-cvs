@@ -25,6 +25,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -58,8 +59,8 @@ SKILL_ORDER = {
     'fde':       ['ai-agents', 'languages', 'platforms', 'documentation', 'testing-ci'],
 }
 
-# Skills menu label as it should render (matches golden bullets.yaml: title-case
-# "AI & Agents", "Testing & CI"). Keyed by the engine key.
+# Skills menu label as it should render (title-case "AI & Agents", "Testing &
+# CI"). Keyed by the engine key.
 SKILL_LABELS = {
     'ai-agents':     'AI & Agents',
     'documentation': 'Documentation',
@@ -119,14 +120,14 @@ def parse_master(md: str) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
         sys.exit(f"render_resume: expected 4 '·'-separated contact fields, got {len(parts)}: {contact_line!r}")
     city, email, site_url, linkedin_url = parts
     site = re.sub(r'^https?://', '', site_url).rstrip('/')
-    github = re.sub(r'^https?://', '', linkedin_url).rstrip('/')
+    linkedin = re.sub(r'^https?://', '', linkedin_url).rstrip('/')
 
     sections = split_sections(md)
 
     bullets: dict[str, Any] = {
         'meta': {
             'canonical_name': name,
-            'contact': {'city': city, 'email': email, 'site': site, 'github': github},
+            'contact': {'city': city, 'email': email, 'site': site, 'linkedin': linkedin},
         },
         'roles': [],
         'bullets': [],
@@ -147,8 +148,7 @@ def parse_master(md: str) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
 
 
 def _build_indexes(bullets: dict[str, Any]) -> None:
-    """Add the `_*_by_id` lookup keys the engine's render() expects (same shape
-    as build_resume.load_bullets, which we bypass)."""
+    """Add the `_*_by_id` lookup keys the engine's render() expects."""
     bullets['_bullets_by_id'] = {b['id']: b for b in bullets['bullets']}
     bullets['_roles_by_id'] = {r['id']: r for r in bullets['roles']}
     bullets['_summaries_by_id'] = {}
@@ -343,7 +343,6 @@ def _make_plan(target: str, tagline: str, summary: str,
         'summary_id': None,
         'skill_order': SKILL_ORDER[target],
         'bullets_by_role': bullets_by_role,
-        'show_projects': False,
         'show_publications': True,
         'show_community': False,
     }
@@ -398,13 +397,13 @@ def parse_tailored(md: str) -> tuple[dict[str, Any], dict[str, Any]]:
         sys.exit(f"render_resume: expected 4 '·'-separated contact fields, got {len(parts)}: {contact_line!r}")
     city, email, site_url, linkedin_url = parts
     site = re.sub(r'^https?://', '', site_url).rstrip('/')
-    github = re.sub(r'^https?://', '', linkedin_url).rstrip('/')
+    linkedin = re.sub(r'^https?://', '', linkedin_url).rstrip('/')
 
     sections = split_sections(md)
     bullets: dict[str, Any] = {
         'meta': {
             'canonical_name': name,
-            'contact': {'city': city, 'email': email, 'site': site, 'github': github},
+            'contact': {'city': city, 'email': email, 'site': site, 'linkedin': linkedin},
         },
         'roles': [], 'bullets': [], 'summaries': {}, 'skills_menu': {},
         'education': [], 'publications_activity': [], 'community': [],
@@ -430,7 +429,6 @@ def parse_tailored(md: str) -> tuple[dict[str, Any], dict[str, Any]]:
         'summary_id': None,
         'skill_order': list(bullets['skills_menu'].keys()),
         'bullets_by_role': bullets_by_role,
-        'show_projects': False,
         'show_publications': True,
         'show_community': False,
     }
@@ -474,13 +472,13 @@ def render_target(target: str, out: Path, bullets: dict, plan: dict,
 def emit_base(bullets: dict, plan: dict) -> str:
     """Serialize a parsed (bullets, plan) back into the tailored `--input`
     markdown format, so a master target can be materialized as a reusable base
-    résumé (per SPEC.md §10 Targets & bases)."""
+    résumé (per SPEC.md §4 Targets & bases)."""
     m = bullets['meta']
     c = m['contact']
     out: list[str] = [
         f"# {m['canonical_name']}",
         "",
-        f"{c['city']} · {c['email']} · https://{c['site']} · https://{c['github']}",
+        f"{c['city']} · {c['email']} · https://{c['site']} · https://{c['linkedin']}",
         "",
         f"**{plan['tagline']}**",
         "",
@@ -576,7 +574,7 @@ def main() -> int:
 
     if args.all:
         for target in sorted(plans):
-            out = args.outdir / f'2026-06-30-wsgong-resume-{target}.pdf'
+            out = args.outdir / f'{date.today().isoformat()}-wsgong-resume-{target}.pdf'
             render_target(target, out, bullets, plans[target], docx_only=args.docx_only)
         return 0
 
