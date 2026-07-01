@@ -1,22 +1,12 @@
-# Phase 1 + Phase 2 + Phase 4 deps. Pinned minors; bump as needed.
+# v2 dependencies. Only build_cover_letter.py strictly needs a pip dep
+# (python-docx); install into .venv. The other scripts run on system python3.
 
-# Phase 1 — search adapters and the fit-scorer driver
-requests>=2.31,<3
-PyYAML>=6.0,<7
+python-docx>=1.1,<2   # scripts/build_cover_letter.py (letterhead + body)
+PyYAML>=6.0,<7        # convenience; some scripts read/write yaml
+lxml>=5,<6            # OOXML pretty-print inside scripts/build_resume.py
+pypdf>=4,<5           # scripts/merge_pdfs.py
+playwright>=1.44,<2   # browser fetch for JS-rendered / LinkedIn listings
 
-# Phase 2 — resume tailoring
-python-docx>=1.1,<2          # read existing resumes for bullet extraction + backprop
-lxml>=5,<6                   # OOXML pretty-print inside build_resume.py
-pypdf>=4,<5                  # scripts/merge_pdfs.py
-
-# Phase 4 — tracker / scheduler
-python-dateutil>=2.8,<3      # scheduler time-parsing from recruiter prose
-
-# Retrieval — local semantic index over bullets.yaml + voice-corpus
-# Replaces linear-scan reads in resume-tailor + cover-letter-writer agents.
-sentence-transformers>=3,<4  # local model (~80MB at first use), no API key
-numpy>=1.26,<3               # vector ops for retrieve.py
-
-# System (not pip-installable, noted here for the install doc):
-#   brew install --cask libreoffice       # scripts/docx_to_pdf.py
-#   brew install gh                       # pre-commit + PR utilities
+# System (not pip-installable):
+#   brew install --cask libreoffice font-inter   # scripts/docx_to_pdf.py + embedded Inter
+#   brew install gh                               # PR utilities

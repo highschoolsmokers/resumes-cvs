@@ -1,299 +1,73 @@
-# CLAUDE.md — Job Search Repo Build Playbook
+# CLAUDE.md — operating playbook (v2)
 
-**Audience:** Claude Code (or any coding agent) working in the `Resumes/` repo.
-**Purpose:** How to build, operate, and extend the job-search agent system.
-**Canonical spec:** `job-search-agent-spec.md`. Read it first. This file is the execution plan; the spec is the source of truth for *what* to build.
+How to work in this repo. **Read `SPEC.md` first** — it's the single source of
+truth for *what* this system is and every content/voice rule. This file is *how*
+to operate it. If the two ever disagree, SPEC.md wins; fix this file.
 
----
+The v1 pipeline (search agent, apply queue, tracker/scheduler, provenance git
+gate, 8 tailoring agents, `bullets.yaml`) is **retired** — see `SPEC.md` §14 and
+`archive/v1/`. Do not resurrect it.
 
-## 0. Start-of-session checklist
+## What this is
 
-Before touching anything, in this order:
+You bring a job listing (a URL, or several); the system turns out a tailored
+résumé PDF + cover-letter PDF per listing, grounded in real material, fast. The
+human uploads them. Nothing is auto-submitted.
 
-1. Read `job-search-agent-spec.md` end-to-end. Every design decision routes back to it; §10 has the current per-phase status.
-2. Read `docs/resume-style-spec.md` — non-negotiable style constraints for the resume. (Cowork sessions will also see the same content auto-loaded from `/.auto-memory/resume_style_spec.md`; local Claude Code sessions see only the in-repo copy.)
-3. `git status` and `git log --oneline -20` — know where the repo is before making changes.
-4. Confirm the provenance hook is installed: `git config --get core.hooksPath` should print `.githooks`. If not, run `bash scripts/install_provenance_hook.sh`. Without it, the hallucination guard isn't enforced.
-5. Confirm the user is looped in on whatever change you're about to make if it crosses the trust boundary in §5.
+## The files
 
-## 1. Repo conventions
+- `master-resume.md` — the REAL résumé superset; source of truth. Tailoring **subtracts and reorders**, never invents.
+- `resume-devdocs.md` / `resume-education.md` / `resume-fde.md` / `resume-qa.md` — the four target bases (SPEC §10). The first three are generated from the master (`render_resume.py --emit-base`); `resume-qa.md` is hand-maintained. A tailored application copies the matching base and light-tunes it to the JD.
+- `voice.md` — cover-letter voice + letterhead/length/forbidden-phrase config. `voice/` — his real letters (gitignored).
+- `applications/<Company>/<role-slug>-<YYYY-MM-DD>/` — one folder per job (gitignored): `listing.{json,md}`, `resume.md`+`.pdf`, `cover-letter.md`+`.pdf`.
+- `resume-template.docx` — the Swiss/Inter master the engine renders into. `SPEC.md`, this file.
 
-These are enforced rules, not suggestions. Violations should be caught in review.
+## The scripts (`scripts/`)
 
-### 1.1 Naming
+- `url_ingest.py <URL> --no-commit` — one URL → `listing.{json,md}`. Greenhouse/Lever/Ashby via ATS APIs (no browser); LinkedIn/generic → a stub flagged for a browser fetch or a pasted JD.
+- `batch_ingest.py <URL…>` — many URLs → a JSON manifest (folders + stub flags). No git.
+- `render_resume.py --input <resume.md> --out <pdf>` — render a tailored résumé. Also `--target <t>`, `--emit-base`, `--docx-only`.
+- `build_cover_letter.py --input <md> --out <docx>` — needs `python-docx`; **run via `.venv/bin/python`**. Reads `voice.md`; aborts on `[NEEDS SOURCE]`.
+- `docx_to_pdf.py <docx…>` — many docx → PDF in **one** LibreOffice run. **Never run two `soffice` processes at once.**
+- `lint_resume.py <docx>` — Swiss-style linter (manual check).
 
-- Files and folders: lowercase kebab, ISO dates where relevant — `developer-advocate-sf-2026-04-20/`, never `DevRel_SF.docx`.
-- Legacy company folders (`NVIDIA/`, `Vercel/`, `Handshake/`, `APublicSpace/`, `MarineLayer/`, `SFMOMA/`) have been migrated under `applications/` (spec §10 Phase 5 partial: filenames moved, archiver agent still deferred). Do not recreate them at the repo root.
-- Branches: `app/<company>-<role-slug>-<yyyy-mm-dd>` for per-application work. `main` is always submittable.
+## The two workflows
 
-### 1.2 Commits
+- **One URL, by hand:** `url_ingest.py <url> --no-commit` → tailor `resume.md` (copy the target base, light-tune) → write `cover-letter.md` (SPEC §11) → render (`render_resume.py --input`, `build_cover_letter.py` via `.venv`, `docx_to_pdf.py`).
+- **A list of URLs:** the `/batch-apply` command (`.claude/commands/batch-apply.md`) — ingest → fan out one `batch-apply-worker` subagent per listing → one batched render → review table.
 
-- Format: `<agent-or-area>: <verb> <object>` — e.g. `resume-tailor: rewrite summary for Vercel DX role`, `search-agent: add Lever adapter`.
-- One logical change per commit. A resume tailor run is one commit. A spec edit is a separate commit.
-- Never amend a commit the user has already seen (use `--amend` only on your own unpushed work within the current session).
-- Never `git push --force` to `main`. Force-push to `app/*` branches is fine if you haven't merged yet.
+## Conventions
 
-### 1.3 Identity
+- **Naming:** lowercase kebab, ISO dates — `senior-dx-engineer-2026-07-01/`. Company folder keeps its name.
+- **Branches:** `main` is always submittable. Do feature work on a branch; fast-forward `main` and push when done. Never `git push --force` to `main`.
+- **Commits:** `<area>: <verb> <object>`, one logical change each. End messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. Commit only when asked.
+- **Git identity:** local to this repo (`git config user.name/.email`, no `--global`). Default `W.S. Gong <billygong@me.com>`.
+- **`.gitignore`:** `applications/*` (except `_template/`), `voice/`, `.venv/`, `.DS_Store`, populated `config/`. Never commit private working content or a rendered PDF you didn't mean to. If you need to track something under a gitignored path, refactor the path — don't add an exception.
 
-- Git identity is **local to this repo only** — set via `git config user.name` / `user.email` (no `--global`). Confirm with `git config --local --list | grep user`.
-- Default identity: `W.S. Gong <billygong@me.com>`. Ask the user before changing.
+## Environment
 
-### 1.4 .gitignore guarantees
+- Python 3.11+. `.venv` (gitignored): `python3 -m venv .venv && .venv/bin/pip install python-docx PyYAML`. Only `build_cover_letter.py` needs it; the other scripts run on system `python3`.
+- LibreOffice for PDF (`brew install --cask libreoffice`); Inter font (`brew install --cask font-inter`) embedded at build time.
+- Fetching: ATS APIs need no browser. LinkedIn/generic listings need a Chrome/Playwright fetch or a pasted JD (they ingest as stubs until then).
 
-Nothing under these patterns may ever be committed (current `.gitignore`):
+## Trust boundary (never cross)
 
-- `config/secrets.env*`, `.env`, `.env.local`
-- `.DS_Store` (anywhere); `~$*.docx`/`~$*.xlsx`/`~$*.pptx` lock files
-- `__pycache__/`, `*.pyc`, `.venv/`, `.ipynb_checkpoints/`, `.vscode/`, `.idea/`
-- `.claude/settings.local.json`, `.playwright-mcp/`
-- **Private working content (public-template repo policy):**
-  - `bullets.yaml`, `config/criteria.yaml`, `config/voice.yaml`, `config/personal-facts.yaml`
-  - `voice-corpus/*` except `voice-corpus/README.md`
-  - `applications/*` except `applications/_template/`
-  - `applications/_plans/` — role-family plan cache
-  - `search/runs/`, `search/seen.db` and DB journals; `sweep/runs/`
-  - `state/` — derived semantic index + bullet outcomes
-  - `queue.jsonl`, `queue.history.jsonl`, `queue.failed.jsonl`, `.queue.lock`
-  - `*-generalized.docx`/`.pdf`/`.unpacked/`
-- `dashboard.md` — regenerated by `scripts/dashboard.py`
+- **Never submit an application.** Produce the PDFs; the human uploads them.
+- **Never send an email or outreach message.** Draft only.
+- These hold in the batch flow too. See `SPEC.md` §8.
 
-If you need to track a file under a path like the above, refactor the path — don't add an exception. The patterns are intentional: the repo is a *public template*; private working content stays in the local tree.
+## What not to do
 
-### 1.5 DOCX handling
+- **Don't invent.** Every résumé line traces to a base / `master-resume.md`; every cover-letter fact to the JD or durable knowledge. If you can't source it, write `[NEEDS SOURCE: …]` and stop — `build_cover_letter.py` refuses to render with it, and that's the point.
+- **Don't grade his own prose** ("so the test plans read clearly," "keeps the bug reports sharp") — SPEC §12 self-assessment flourishes. State the credential/artifact plainly.
+- **Don't use em-dashes** in job-search prose (résumés, cover letters). Colons, semicolons, parens, periods; en-dashes for ranges. (His literary voice uses them — a different register.)
+- **Don't quote a company's marketing/news** back at them in a cover letter. Ever. Open with his own framing.
+- **Don't change the résumé font, accent, or template** without sign-off. Refer to him as **W.S. Gong** in résumé/CV contexts.
+- **Don't resurrect v1** (queue, tracker, provenance hook, bullets.yaml). It's in `archive/v1/` for history only.
 
-Binary `.docx` diffs are unreadable. For the **generated resume** (where back-propagation of hand-edits into `bullets.yaml` depends on diffing the OOXML):
+## Files of record (read in this order)
 
-1. Write the `.docx` to its final location.
-2. Also unpack it (zip → OOXML XML) to a sibling `*.unpacked/` folder, pretty-printed.
-3. Commit both when committable. On the public-template repo, `*-generalized.unpacked/` is gitignored — the unpacked sibling is for local `git log -- applications/<…>/resume.unpacked/` audit during private use.
-4. Never edit the OOXML in the unpacked dir directly — it's output, not source.
-
-The `/apply` skill passes `--no-unpacked` to `scripts/build_resume.py` for per-application tailoring (the unpacked sibling is regeneratable and inflates the working tree). The full unpacked sibling is written when building the generalized resume.
-
-**Cover letters do NOT get a `.unpacked/` sibling.** `scripts/build_cover_letter.py` doesn't write one, and the back-propagation flow (`scripts/backprop_edits.py`) targets `bullets.yaml` not the letter body — there's no equivalent loop that benefits from the OOXML diff.
-
-### 1.6 Canonical resume style
-
-Every resume goes through `scripts/build_resume.py` operating on `resume-template.docx`. The style spec at `docs/resume-style-spec.md` is authoritative for typography. Do **not** introduce a second resume template, rewrite `scripts/build_resume.py` from scratch, or switch fonts without explicit user sign-off.
-
-## 2. Phased build plan
-
-Execute phases in order. Each phase has a self-contained definition of done. Don't start Phase N+1 until the user has signed off on Phase N.
-
-### Phase 1 — Top-of-funnel search (est. 1 week)
-
-Goal: pull listings from Greenhouse/Lever/Ashby public APIs into a normalised, de-duped stream with a fit score. No resume tailoring yet.
-
-Create:
-
-- `config/criteria.yaml` — copy the draft from spec §3.2; ask the user to review the title include/exclude lists, comp floor, and company excludes before first run.
-- `config/sites.yaml` — start with Greenhouse + Lever + Ashby + HN Who's Hiring. Skip LinkedIn in Phase 1 (it needs Chrome MCP and is brittle).
-- `agents/search-agent.md` — prompt per spec §9.1.
-- `agents/fit-scorer.md` — prompt per spec §3.5.
-- `search/` directory tree and `search/seen.db` (SQLite, single `seen(hash TEXT PRIMARY KEY, seen_at TEXT)` table).
-- `search/run.py` — thin Python driver that invokes adapters, writes `search/runs/<ts>/listings.jsonl`, calls the fit-scorer agent, emits `summary.md`.
-
-Acceptance:
-
-- One `search/run.py` invocation from empty state produces ≥ 30 normalised listings across the configured sources.
-- Rerun within 24h adds zero duplicates.
-- `summary.md` groups `recommend: yes` listings by company with source URLs and one-line rationales.
-
-Commit boundary: one commit per adapter added, one for the driver, one for the scorer prompt. Keep `search/runs/<ts>/` out of git except for `summary.md` and `scored.jsonl`.
-
-### Phase 2 — Resume tailoring (est. 1 week)
-
-Goal: a listing in, a tailored `.docx` + `.pdf` out, with every claim traceable.
-
-Create:
-
-- `bullets.yaml` — enumerate every usable accomplishment from the existing `resume-template.docx` and the tailored resumes under `NVIDIA/`, `Vercel/`, `Handshake/`, etc. Tag each per spec §4.4. Built collaboratively with the user — the initial extraction runs through `scripts/extract_bullets.py`, then the user verifies every line. No auto-fabrication.
-- `scripts/build_resume.py` refactor: accepts `--plan <path>` and `--out <path>` flags. Plan YAML has `target_role_family`, `summary_id` / `summary_text`, `skill_order`, `bullets_by_role`, `show_projects` / `show_publications` / `show_community`, and a free-form `picked_because` block for per-bullet rationale. Without `--plan`, produces the generalised resume byte-for-byte (acceptance check).
-- `agents/resume-tailor.md` — prompt per spec §9.2. Includes dry-run mode, `fit-report.md` sibling artifact, and an explicit refusal protocol (`[NEEDS SOURCE]`).
-- `scripts/extract_bullets.py` — helper to dump every DOCX bullet before hand-curation.
-- `scripts/docx_to_pdf.py` — LibreOffice-headless wrapper (decision committed in spec §8.6; do not swap to `docx2pdf`).
-- `scripts/check_provenance.py` — resume-side provenance checker per spec §8.8. Supports `--warn` (Phase 2 default) and `--block` (Phase 3+); `--all` and `--staged` selectors for repo-wide vs. pre-commit scans.
-- `scripts/lint_bullets.py` — structural linter over `bullets.yaml`: unique ids, resolved role refs, known role families, summary `built_from` resolution, coverage warnings. Exit-nonzero on errors; `--strict` to treat warnings as errors.
-- `scripts/bullets_lookup.py` — human-facing grep (`--tag`, `--family`, `--role`, `--keyword`, `--ids`, `--list-*`). Intended to be run by hand during planning; never wired into the build.
-- `scripts/url_ingest.py` — single-listing entry point per spec §3.8 (LinkedIn / Greenhouse / Lever / Ashby / generic URL). Lives here in Phase 2 because it's the on-ramp into tailoring from outside the bulk search. LinkedIn and generic fallbacks emit a stub listing with `requires_chrome_mcp` / `requires_user_fill` flags; downstream tailoring refuses to run until cleared.
-- `scripts/backprop_edits.py` — prompted back-propagation of user hand-edits on a rendered `resume.docx` into `bullets.yaml`. Prompts per-bullet: update / new-id / skip / quit. NEVER writes silently.
-- `applications/_template/` — scaffolding for new application folders (tracker skeleton, listing placeholders).
-
-Acceptance:
-
-- `resume-tailor` against a sample listing produces a `resume.docx` whose every bullet appears verbatim in `bullets.yaml`.
-- `resume.provenance.yaml` is emitted alongside, with an entry for every bullet/skill/summary sentence and `unsourced_claims: []`.
-- Output passes the style-spec checks (font, accent color, layout).
-- Rerun with identical inputs → byte-identical `.docx` and byte-identical provenance. (`python3 scripts/build_resume.py` from a clean checkout reproduces `2026-04-17-wsgong-resume-generalized.docx` content exactly.)
-- The corresponding `resume.unpacked/` is committed alongside.
-- `scripts/url_ingest.py <linkedin-url>` creates a well-formed application folder and branch without touching `seen.db`.
-- `scripts/lint_bullets.py` exits 0 on the committed `bullets.yaml`.
-- `fit-report.md` is written alongside every tailor run, naming every gap explicitly.
-
-### Phase 3 — Cover letter writer (est. 1 week)
-
-Goal: cover letters in the user's voice, grounded in real projects.
-
-Create:
-
-- `voice-corpus/` seeded with: `NVIDIA/nvidia-application-answers.md`, any prior cover letters the user can dig up, and 2–3 long-form samples (README excerpts, blog posts). Ask the user to drop samples here — don't invent.
-- `config/voice.yaml` per spec §5.2 (includes `scheduling_preferences` for §6.8 once Phase 4 lands).
-- `agents/cover-letter-writer.md` — prompt per spec §9.3. The agent must run a research pass that populates `applications/<…>/company-facts.md` BEFORE drafting (spec §5.3 step 1).
-- `scripts/build_cover_letter.py` — renders `cover-letter.md` → `cover-letter.pdf` with the same Inter/#D44500 letterhead as the resume. Goes through `scripts/docx_to_pdf.py`.
-- `scripts/check_provenance.py` already knows how to validate `cover-letter.md` / `cover-letter.provenance.yaml` (Phase 2 laid the infrastructure). The pre-commit hook in `--block` mode landed in Phase 12 (`.githooks/pre-commit`), installed via `scripts/install_provenance_hook.sh`.
-- Extend `applications/_template/` with `company-facts.md`, `cover-letter.md`, and `cover-letter.provenance.yaml` skeletons (already present from Phase 3 kickoff — reference when starting a new application by hand).
-
-Acceptance:
-
-- Every generated letter names the company and at least one specific product/customer/announcement — every such mention is cited in `company-facts.md`.
-- No `forbidden_phrases` appear.
-- Length 300–400 words (hard fail > 500).
-- Every concrete claim traces to `bullets.yaml`, `company-facts.md`, or `voice-corpus/`; `cover-letter.provenance.yaml` has `unsourced_claims: []`.
-- `scripts/check_provenance.py` passes, and the pre-commit hook blocks unsourced commits.
-
-### Phase 4 — Application tracking, follow-ups, and scheduling (est. 1 week)
-
-Goal: `tracker.yaml` stays in sync with Apple Mail without pestering the user; recruiter questions and scheduling requests auto-draft replies that the user sends.
-
-Status: **shipped** (2026-05-13). All agent prompts, deterministic scripts, and template skeletons landed; the scheduled task setup is documented but registration with the scheduled-tasks MCP is the user's responsibility. The user filling out `config/personal-facts.yaml` is still a per-machine setup step. The pre-commit hook lives at `.githooks/pre-commit` (installed via `scripts/install_provenance_hook.sh`) and covers `replies/*.provenance.yaml` without change.
-
-Create:
-
-- `tracker.yaml` schema per spec §6.2 and a template at `applications/_template/tracker.yaml`.
-- `agents/tracker-agent.md` per spec §9.4. Uses `mcp__Control_your_Mac__osascript` against Apple Mail — NOT Gmail.
-- `scripts/sweep.py` — runs the tracker agent across all open applications, regenerates `dashboard.md`.
-- Scheduled task: every 2h via `mcp__scheduled-tasks__create_scheduled_task`.
-- Apple Mail mailbox `JobSearch/<Company>` created on first tracked message per app (nested iCloud mailbox — Apple Mail has no Gmail-style labels).
-- `config/personal-facts.yaml` (gitignored; spec §8.7) + `config/personal-facts.example.yaml` (committed template). Ask the user to fill out `personal-facts.yaml` before the reply-drafter can run.
-- `agents/reply-drafter.md` per spec §9.6 — handles recruiter question threads. Drafts are staged in Mail.app's Drafts mailbox, never sent.
-- `agents/scheduler.md` per spec §9.7 — handles scheduling threads. Uses the Google Calendar MCP (`mcp__8cb1832e-5c3e-45d7-a416-7920a5827a02__*`). Creates `[TENTATIVE]` calendar events only; confirmed events require explicit user acknowledgment.
-- Extend `scripts/check_provenance.py` to cover `replies/*.md` / `replies/*.provenance.yaml`.
-
-Acceptance:
-
-- New recruiter email from a tracked company surfaces in the right `tracker.yaml` within 2h (verified via `mail_message_ids`).
-- No outbound email is ever sent by the agent — only Apple Mail drafts, visible in Mail.app → Drafts.
-- `dashboard.md` lists all non-archived applications grouped by status with next-action dates.
-- Recruiter question threads produce a draft where every personal claim cites `personal-facts.yaml`; un-answerable questions become `[USER TO ANSWER]` placeholders, never guesses.
-- Scheduling threads produce up to three candidate slots with quoted source phrases, a tentative Google Calendar event, and a draft reply. No confirmed event is ever auto-created.
-
-### Phase 5 — Archiving + legacy migration (deferred)
-
-Status: **partial / deferred**. Legacy folder migration was completed (the source private repo's working tree moved `NVIDIA/`, `Vercel/`, `Handshake/`, `APublicSpace/`, `MarineLayer/`, `SFMOMA/` under `applications/`). The `agents/archiver.md` agent that moves closed applications to `archive/<year>/` is not yet implemented. Until it lands, archiving is a manual `git mv` performed by the user.
-
-When implemented, would create:
-
-- `agents/archiver.md` per spec §9.5.
-- `archive/<year>/index.md` as rolling index.
-- A retro in `archive/<year>/retro.md` emitting config suggestions as a `.diff` (never auto-applied).
-
-### Phases 6–12 — Pipeline sharpening + apply-queue + retrieval + provenance gate (shipped)
-
-These phases landed after the original Phase 1–4 build. The detail lives in `job-search-agent-spec.md §10`; one-liners:
-
-- **Phase 6 — `/apply` orchestration**: auto-commit branch, parallel resume-tailor + cover-letter-writer fan-out, single commit per apply, conditional `fit-report.md`, parallel research fetches.
-- **Phase 7 — JD analysis pre-step**: `agents/jd-analyzer.md` produces `applications/<…>/jd-analysis.md`; both tailoring agents consume it.
-- **Phase 8 — caches + batch render**: company-facts cache (`COMPANY_FACTS_TTL_DAYS=14`), role-family plan cache (`applications/_plans/`), single-soffice batch DOCX→PDF.
-- **Phase 9 — semantic retrieval**: local `sentence-transformers/all-MiniLM-L6-v2` index over `bullets.yaml` and `voice-corpus/`. `scripts/build_index.py` + `scripts/retrieve.py`. State at `state/embeddings.npz` + `state/index_meta.yaml` (gitignored, rebuildable).
-- **Phase 10 — apply queue**: `scripts/queue_add.py`, `scripts/apply_queue.py`, `scripts/queue_status.py`. Drainer is `claude -p '/apply <url>'` in headless mode; the user registers it with the scheduled-tasks MCP via `scripts/install_apply_queue_schedule.sh`.
-- **Phase 11 — bullet outcomes**: `scripts/bullet_outcomes.py` joins `bullets.yaml` × `*.provenance.yaml` × `tracker.yaml` → `state/bullet_outcomes.{csv,md}`. Surfaces as a leaderboard section in `dashboard.md`.
-- **Phase 12 — pre-commit provenance gate**: `.githooks/pre-commit` enforces `check_provenance.py --staged --block` plus `lint_bullets.py` (when bullets.yaml is staged) and `lint_resume.py` (when a `resume.docx` is staged). One-time install: `bash scripts/install_provenance_hook.sh`.
-
-## 3. The daily loop (post-Phase-4)
-
-Once the system is live, a typical day looks like:
-
-1. Morning: scheduled `search/run.py` completes at 07:00 PT. Claude Code opens `search/runs/<today>/summary.md` and lists `yes` recommendations.
-2. User picks one: "Let's apply to the Anthropic FDE role." (Or: user drops a LinkedIn URL into chat — `scripts/url_ingest.py <url>` bypasses the bulk search and jumps straight to step 3.)
-3. Agent creates `applications/Anthropic/forward-deployed-engineer-2026-04-20/` on branch `app/Anthropic-forward-deployed-engineer-2026-04-20`, drops `listing.json` + `listing.md`, generates `resume-plan.yaml`, `resume.docx` + `resume.pdf` + `resume.provenance.yaml`, writes `company-facts.md`, then `cover-letter.md` + `.pdf` + `cover-letter.provenance.yaml`. The two PDFs are the deliverables — they ship as separate files. Pre-commit hook passes only if every concrete claim is sourced.
-4. User reviews. Edits by hand if needed. Says "merge" → fast-forward into `main`.
-5. User applies via the portal themselves (uploading `resume.pdf` and `cover-letter.pdf` separately), then tells the agent "applied to Anthropic". Agent writes `tracker.yaml` with `status: applied`.
-6. Tracker sweep runs every 2h; promotes status as Apple Mail messages arrive. Question threads get auto-drafted replies (user opens Mail.app → Drafts, reviews, sends). Scheduling threads get candidate slots + a tentative Google Calendar event.
-7. When the application closes, the archiver moves it to `archive/<year>/` and renames the mailbox to `JobSearch-Archive/<Company>`.
-
-## 4. Environment and dependencies
-
-Record any install decisions here so the next session doesn't reinvestigate.
-
-- **Python**: 3.11+. Use a local `.venv` (gitignored). Deps pinned in `requirements.txt` at repo root.
-- **Node**: only if an adapter requires it (currently none do).
-- **System tools**: `git`, `gh` (auth'd), `libreoffice` (installed via `brew install --cask libreoffice` — decision committed in spec §8.6, do not swap to `docx2pdf`).
-- **Python deps**: see `requirements.txt`. Notable: `python-dateutil` (scheduler), `sentence-transformers` + `numpy` (Phase 9 vector index), `pypdf` (merge_pdfs), `python-docx` + `lxml` (build / extract / backprop).
-- **Per-clone one-time setup**:
-  - `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
-  - `bash scripts/install_provenance_hook.sh` — wires `.githooks/pre-commit` (the provenance gate). **Required**; without it, the hallucination guard isn't enforced on commit.
-  - `bash scripts/install_apply_skill.sh` — copies `apply/` skill into the Cowork user-skills dir (optional; only if using Cowork).
-- **MCP servers expected to be connected**:
-  - `mcp__Control_your_Mac__osascript` — Apple Mail (iCloud) read + draft, plus any AppleScript the tracker or scheduler needs. **Required from Phase 4.**
-  - Google Calendar MCP (`mcp__8cb1832e-5c3e-45d7-a416-7920a5827a02__*`) — scheduler. Required from Phase 4.
-  - Chrome MCP (`mcp__Claude_in_Chrome__*`) — LinkedIn URL ingest. Required from Phase 2 when `scripts/url_ingest.py` hits a LinkedIn URL.
-  - Google Drive — optional.
-  - Notion — optional (Phase 4+ dashboard mirror, see spec §11.1).
-  - `mcp__scheduled-tasks__*` — daily search run + every-2h tracker sweep.
-
-## 5. Trust boundary — human-in-the-loop checkpoints
-
-Three moments where the agent ALWAYS stops and asks the user. Non-negotiable.
-
-1. **Before a job application is submitted.** The agent produces artifacts; the user uploads them to the portal. Never auto-submit, never fill portal forms, never click "Submit".
-2. **Before any email leaves the outbox.** Recruiter replies are staged in Apple Mail.app's Drafts mailbox. The user opens and sends. Never call `send mail` via AppleScript — only `make new outgoing message` (which lands the message in Drafts).
-3. **Before a calendar event is marked confirmed.** The scheduler creates `[TENTATIVE]` events only. Promoting to confirmed requires the user saying "confirmed" after the recruiter locks a slot.
-
-Everything else — searching, scoring, tailoring, drafting, committing, archiving — runs without asking, because it's local, reversible, and in git.
-
-## 6. What not to do
-
-- Don't set global git config. Local only.
-- Don't run `git push --force` against `main`. Ever.
-- Don't skip pre-commit hooks (`--no-verify`) unless the user asks. The provenance hook (§8.8) in particular must never be bypassed — it's the hallucination guard.
-- Don't modify `resume-template.docx` (the pristine master) except to fix a genuine bug in the master itself — and then ask first.
-- Don't introduce a second resume font, second accent color, or second template layout without user sign-off.
-- Don't `git add .DS_Store` even once — it'll live forever in history.
-- **Don't invent resume bullets.** Every claim must trace to `bullets.yaml` or the template. If you're about to write a sentence you can't cite, write `[NEEDS SOURCE: <claim>]` and stop — never fill the gap with a plausible guess.
-- **Don't invent company facts.** Every concrete noun in a cover letter (product, customer, announcement, dollar figure) must be cited in `company-facts.md` with a URL. If your research pass came back empty, fall back to a JD-specific detail from `listing.md` — don't make something up.
-- **Don't invent personal facts.** Every answer to a recruiter question about the user must cite a key in `config/personal-facts.yaml`. If the answer isn't there, insert `[USER TO ANSWER: <question>]` in the draft — never guess at visa status, comp expectations, start date, or relocation willingness.
-- **Don't write buzzy cover-letter openings.** This is a repeat correction. The first sentence of P1 must state W.S.'s interest in the position itself, expressed concretely (e.g. `"I'd like this role because <specific reason from JD or company facts>."`). Never quote the company's marketing copy back at them, never lead with a famous-customer/stat-then-meta-pivot ("that's the precedent in the room"), never use "what excites me about" / "what pulled me to" / "what drew me to". Authoritative rule: `config/voice.yaml → opening`.
-- **NEVER open a cover letter with timely news about the company.** Repeat correction (Cognition Partner-DE letter, 2026-04-22: "DO NOT start with timely news. I find it corny and that it is trying too hard."). No recent product launches, acquisitions, market expansions, partnerships, blog posts, customer wins, funding rounds, conference appearances, or anything framed as "news." No "today" / "this morning" / "last week" / "recently" / "just announced." No name-drops of a freshly announced customer or partner as the hook. Open with W.S.'s own work or framing. Company facts in the body must be DURABLE context (what the product does, who the team serves), not news. Authoritative rule: `config/voice.yaml → opening` (HARD-BANNED OPENING PATTERNS).
-- **Don't use em-dashes (—) in W.S.'s voice.** Anywhere prose is rendered as W.S.: cover letters, reply drafts, `[USER TO ANSWER]` placeholders, anywhere. He's a colons / semicolons / parens / period person and never uses em-dashes in this context. Replace any em-dash with one of those. En-dashes (–) for date and number ranges (e.g. 2017–2020, 20–45) are fine. Authoritative rule: `config/voice.yaml → style_notes`.
-- Don't send email. Only stage drafts in Mail.app's Drafts mailbox via AppleScript's `make new outgoing message`. Never use `send`.
-- Don't create confirmed calendar events. `[TENTATIVE]` only, until the user explicitly confirms a slot.
-- Don't commit `config/personal-facts.yaml` — it's gitignored. If the user pastes contents in chat, update the file on disk (locally); do not stage it.
-- Don't auto-apply the archive-review retro's config suggestions. The retro emits a `.diff`; the user merges by hand.
-- Don't commit anything under `config/secrets.env*`, even if the user pastes a token. Redirect them to the gitignored file.
-- Don't try to use the Gmail MCP. The user uses iCloud Mail; the tracker talks to Apple Mail via `mcp__Control_your_Mac__osascript`.
-
-## 7. Files of record
-
-When landing fresh in this repo, read in this order:
-
-1. `job-search-agent-spec.md` — what we're building and why.
-2. `CLAUDE.md` (this file) — how to build and operate it.
-3. `config/criteria.yaml` — current targeting rules (exists from Phase 1 onward).
-4. `bullets.yaml` — the ground truth for resume experience claims (exists from Phase 2 onward).
-5. `config/voice.yaml` + `voice-corpus/` — tone for cover letters (exists from Phase 3 onward).
-6. `config/personal-facts.yaml` — closed universe for recruiter-reply personal claims (exists from Phase 4 onward; gitignored — read it, don't commit changes to it).
-7. `dashboard.md` at repo root (generated, not committed) — what's in flight right now.
-
-## 8. Open questions from the spec (resolve before/during each phase)
-
-Mirror of spec §11 plus a resolution log of decisions taken.
-
-**Open:**
-
-1. Phase 1: keep `comp_floor_usd` at $180k or leave unset initially?
-2. Phase 2+: LinkedIn Easy Apply flow (URL-ingest produces the listing either way; the open question is the apply path).
-3. `search/runs/` retention — forever or 30-day broom?
-4. Phase 3: company research depth — homepage + /products + /customers + 6mo /blog. Adjust?
-
-**Resolved (chronological):**
-
-- 2026-04-18: **Notion read-only dashboard mirror** — no; `dashboard.md` only. Revisit if markdown stops feeling sufficient.
-- 2026-04-18: **`config/personal-facts.yaml` scaffolding** — scaffold only. `config/personal-facts.example.yaml` is committed with every field null; the user fills out `config/personal-facts.yaml` (gitignored) locally before the reply-drafter runs. Any unfilled field renders as `[USER TO ANSWER: …]`.
-- 2026-04-18: **Scheduling defaults** — yes, in `config/voice.yaml → scheduling_preferences`. Per-application overrides via scheduler agent inputs.
-- 2026-05-13: **Cover-letter letterhead** — matches the resume exactly (Inter / #D44500). `scripts/build_cover_letter.py` was renamed off Raleway+Lato during the audit pass; both deliverables ship in the same Swiss style.
-- 2026-05-13: **Combined-PDF ordering** — moot. `/apply` no longer merges; resume.pdf and cover-letter.pdf ship as separate files. `scripts/merge_pdfs.py` is still on disk for the rare portal that demands a single attachment.
-- 2026-05-13: **Provenance ramp** — done. `.githooks/pre-commit` enforces `--block` mode on every commit.
-
----
-
-*End of playbook. Edit this file as conventions evolve — it's the first thing any future Claude Code session reads.*
+1. `SPEC.md` — what we're building and every rule.
+2. `CLAUDE.md` (this) — how to operate it.
+3. `master-resume.md` — ground truth for experience claims.
+4. `voice.md` + `voice/` — tone for cover letters.

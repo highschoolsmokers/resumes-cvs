@@ -235,10 +235,10 @@ The catalog of voice and content failures that made v1 read as bullshit. **The f
 
 ## 13. Résumé style (Swiss / Inter — enforced by the engine)
 
-The canonical look. `resume-template.docx` embodies it; `scripts/build_resume.py`
-renders into it and calls `scripts/lint_resume.py` at the end of every render,
-exiting non-zero on any divergence. The rules below are the intent; the template
-+ linter are the enforcement.
+The canonical look. `resume-template.docx` embodies it and `scripts/build_resume.py`
+renders into it; `scripts/lint_resume.py <docx>` is a standalone Swiss-style
+linter you can run to check a rendered résumé. The rules below are the intent;
+the template is the enforcement, the linter is the check.
 
 - **One type family: Inter.** Hierarchy by weight and size. No second face. Inter OTF is embedded into the DOCX at build time so PDFs render identically anywhere.
 - **Accent `#D44500` (orange)** on the name, tagline, and hyperlinks only — never on body, section labels, or metadata.
