@@ -16,11 +16,11 @@ auto-submitted. Markdown-first: no scraping, no queue, no tracker.
 
 ```bash
 brew install --cask libreoffice font-inter
-python3 -m venv .venv && .venv/bin/pip install python-docx PyYAML pypdf
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
-`build_cover_letter.py` and `merge_pdfs.py` run via `.venv/bin/python`; the rest
-on system `python3` (3.11+). Full commands are in SPEC "Implementation".
+Scripts that need a pip dep run via `.venv/bin/python`; the rest on system
+`python3` (3.11+). Full commands are in SPEC "Implementation".
 
 ## One listing
 

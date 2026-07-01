@@ -1,11 +1,10 @@
-# v2 dependencies. Only build_cover_letter.py strictly needs a pip dep
-# (python-docx); install into .venv. The other scripts run on system python3.
+# Python dependencies. Install into .venv: pip install -r requirements.txt
+# Only the scripts noted below need a pip dep; the rest run on system python3.
 
 python-docx>=1.1,<2   # scripts/build_cover_letter.py (letterhead + body)
-PyYAML>=6.0,<7        # convenience; some scripts read/write yaml
 lxml>=5,<6            # OOXML pretty-print inside scripts/build_resume.py
 pypdf>=4,<5           # scripts/merge_pdfs.py
-playwright>=1.44,<2   # browser fetch for JS-rendered / LinkedIn listings
+playwright>=1.44,<2   # scripts/linkedin_apply.py + linkedin_browser_probe.py (real Chrome)
 
 # System (not pip-installable):
 #   brew install --cask libreoffice font-inter   # scripts/docx_to_pdf.py + embedded Inter

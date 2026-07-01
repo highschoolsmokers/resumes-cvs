@@ -174,11 +174,13 @@ README.md                 # repo front door
 ### Environment
 
 ```bash
-brew install --cask libreoffice font-inter                              # PDF render + embedded font
-python3 -m venv .venv && .venv/bin/pip install python-docx PyYAML pypdf  # cover-letter build + PDF merge
+brew install --cask libreoffice font-inter          # PDF render + embedded font
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
-`build_cover_letter.py` and `merge_pdfs.py` run via `.venv/bin/python`; the other scripts run on system `python3` (3.11+).
+`requirements.txt` is the single source for pip deps. The scripts that need one
+(`build_cover_letter.py`, `render_resume.py`/`build_resume.py`, `merge_pdfs.py`,
+the LinkedIn scripts) run via `.venv/bin/python`; the rest run on system `python3` (3.11+).
 
 ### Scripts (under `scripts/`)
 
