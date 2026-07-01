@@ -38,6 +38,16 @@ __pycache__/
 # during a Claude Code session. Never belongs in git.
 .playwright-mcp/
 
+# LinkedIn updater (scripts/linkedin_apply.py):
+#   - persistent Chrome profile holds the logged-in SESSION COOKIES — sensitive,
+#     never commit.
+#   - run screenshots/logs capture the live profile.
+#   - the JSON is a rebuildable intermediate (scripts/linkedin_export.py --json).
+# linkedin-profile.md itself stays tracked, like the resume-*.md deliverables.
+.linkedin-chrome-profile/
+linkedin-runs/
+linkedin-profile.json
+
 # Temporary docx lock files
 ~$*.docx
 ~$*.xlsx

@@ -44,8 +44,34 @@ browser fetch or a pasted JD. Nothing is submitted.
 - `resume-devdocs.md` / `resume-education.md` / `resume-fde.md` / `resume-qa.md` — four target bases; the first three are generated from the master via `render_resume.py --emit-base`.
 - `voice.md` (+ private `voice/` samples) — cover-letter voice, letterhead, length, forbidden phrases.
 - `applications/<Company>/<role-slug>-<date>/` — one folder per job (gitignored).
-- `scripts/` — `url_ingest.py`, `batch_ingest.py`, `render_resume.py`, `build_resume.py`, `build_cover_letter.py`, `docx_to_pdf.py`, `lint_resume.py`.
+- `scripts/` — `url_ingest.py`, `batch_ingest.py`, `render_resume.py`, `build_resume.py`, `build_cover_letter.py`, `docx_to_pdf.py`, `lint_resume.py`; LinkedIn: `linkedin_export.py`, `linkedin_apply.py`, `linkedin_selectors.py`, `linkedin_browser_probe.py`.
 - `resume-template.docx` — the Swiss/Inter master the engine renders into.
+
+## LinkedIn profile sync
+
+Keep the LinkedIn profile in step with the master résumé. Same grounding rule:
+the profile copy is generated from `master-resume.md`, never hand-invented.
+
+```bash
+# 1. Generate the LinkedIn-field copy from the master (headline/About/experience/skills),
+#    within LinkedIn's char limits and voice rules. --json feeds the driver.
+.venv/bin/python scripts/linkedin_export.py --target education \
+    --out linkedin-profile.md --json linkedin-profile.json
+
+# 2. Dry run (default): opens real Chrome, fills fields, screenshots, saves NOTHING.
+.venv/bin/python scripts/linkedin_apply.py                    # Headline + About
+.venv/bin/python scripts/linkedin_apply.py --experience --fields ""   # position descriptions
+
+# 3. Commit for real — asks before each Save (drop --yes to confirm each one).
+.venv/bin/python scripts/linkedin_apply.py --experience --commit
+```
+
+LinkedIn has no write API, so the driver uses Playwright + real Chrome. First
+run opens a window to log in once (session persists in the gitignored
+`.linkedin-chrome-profile/`). It never submits silently: dry-run is the default
+and every save is confirmed. Selectors live in `linkedin_selectors.py` — the one
+file to edit if LinkedIn's DOM changes; `linkedin_browser_probe.py` re-checks the
+launch strategy. Requires `playwright` (in `requirements.txt`) and Google Chrome.
 
 ## Setup
 
