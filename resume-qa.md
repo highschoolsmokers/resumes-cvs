@@ -4,7 +4,7 @@ San Francisco, CA · billygong@me.com · https://www.ws-gong.com/code · https:/
 
 **Quality Engineer / SDET**
 
-Software quality engineer and SDET with twenty-five years testing web, mobile, and API platforms. Built REST and end-to-end test automation (Selenium, Cucumber, Playwright, Pytest) and an org-wide JMeter performance practice that cut load-testing time 70%. At Slack, owned QA end to end for eight feature teams in the Platform QA organization. Now applies the same rigor to AI systems: an MCP server that grounds model claims against an indexed corpus to block hallucinated citations, plus tooling for citation cross-checking and confidence scoring. MFA in Creative Writing with distinction.
+Software quality engineer and SDET, twenty-five years testing web, mobile, and API platforms, often the first QA hire. Builds the function end to end: test approach and infrastructure, automation wired into CI, metrics for a product's bugs and health, and the team, hired and mentored against a multi-year roadmap. Repeatedly on security products: an MDM app-risk product at Appthority, the Slack Platform (its first QA engineer), and adversarial testing under contract. MFA in Creative Writing with distinction.
 
 ---
 
@@ -26,19 +26,25 @@ Fabulosa Books · 2022–Present · San Francisco, CA
 ### Technical Lead Manager / Staff Engineer, Platform QA
 Slack Technologies · 2017–2020 · San Francisco, CA
 
-- Owned QA end to end for eight feature teams (Block Kit, Workflows, platform APIs); directed four staff and senior engineers, promoted three.
+- First QA engineer on the Slack Platform: owned QA end to end for eight feature teams (Block Kit, Workflows, platform APIs), tested the public API, directed four staff and senior engineers, promoted three.
 - Wrote the API references, SDK guides, and platform tutorials used across the platform, and built internal Web API tooling that outside developers adopted as official documentation examples.
+
+### Security Product QA (Contract)
+Confidential (under NDA) · 2017 · Remote
+
+- Abuse-case testing for a security product: designed scenarios validating that it flagged known exploits from public catalogs (CISA, Exploit-DB).
 
 ### Senior SDET
 Appthority (acquired by Symantec) · 2015–2017 · San Francisco, CA
 
-- Built a full-stack end-to-end testing platform (Cucumber, Rails, Selenium, Circle CI).
-- Authored API specs, test plans, and architecture records that transferred intact through the acquisition.
+- First QA hire; defined the testing approach and infrastructure for an MDM-based mobile security product that profiled apps by behavior: installed on a device, captured pcap-level traffic, generated risk reports.
+- Learned R to audit those reports for the false positives and inconsistencies that meant the collection pipeline, not the app, was at fault.
+- Built the E2E automation (Cucumber, Rails, Selenium, Circle CI) and authored API specs and architecture records that transferred intact through the acquisition.
 
 ### Senior Quality Assurance Engineer
 GoPro · 2012–2015 · San Mateo, CA
 
-- Built a Ruby REST API testing framework with OAuth and a custom gem for automated RSpec generation.
+- First SDET on a team of manual testers. Built a Ruby REST API testing framework with OAuth and a custom gem for automated RSpec generation; adversarial testing of the platform's file-upload service.
 - Established the org-wide JMeter performance practice and cut load-testing time 70%.
 
 ### Previous Experience

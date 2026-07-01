@@ -209,6 +209,8 @@ def _parse_experience(body: str, bullets: dict[str, Any]) -> None:
         dm = re.match(r'\s*(\S+?)\s*[–-]\s*(\S+?)\s*$', dates)
         if dm:
             start, end = dm.group(1), dm.group(2)
+        elif dates:
+            start = end = dates
 
         # Stable role id from employer + start year.
         role_id = f"{_slug(employer.split('(')[0])}-{start}".strip('-')
@@ -501,7 +503,10 @@ def emit_base(bullets: dict, plan: dict) -> str:
                 out.append(f"- {item}")
             continue
         out.append(f"### {r['title_default']}")
-        out.append(f"{r['employer']} · {r['start']}–{r['end']} · {r['location']}")
+        yr = (f"{r['start']}–{r['end']}"
+              if r['start'] and r['end'] and r['start'] != r['end']
+              else (r['start'] or r['end']))
+        out.append(f"{r['employer']} · {yr} · {r['location']}")
         out.append("")
         for bid in rids:
             out.append(f"- {bullets['_bullets_by_id'][bid]['text']}")
