@@ -124,8 +124,9 @@ to," "what pulled me to").
 company facts from the listing or durable knowledge; the letter works on listing
 detail alone. A letter joins the corpus as a **known-good** only if the user
 approved it at every step. Canonical known-goods: the QA cover letter (ends on the
-fit paragraph) and the Pinterest SDET cover letter (disposition close). Calibrate
-against both.
+fit paragraph), the Pinterest SDET cover letter (disposition close), and the Vercel
+Developer Success cover letter (forward-deployed / customer-success register,
+disposition close ending on a concrete object). Calibrate against all three.
 
 The letterhead, length, and forbidden phrases live in `profile.md` and are
 enforced at render (see Implementation).
