@@ -72,7 +72,7 @@ Never:
 
 - **Decoration instead of fact.** Fog verbs ("working on," "leveraging," "passionate about"), aphoristic language ("Docs-as-tests catches drift before users do"), "X in; Y out" pipeline phrasing. Replace with the concrete tool, mechanism, or result.
 - **Claims that aren't demonstrable.** Skills listed but not actually used; superlatives without proof; grading one's own prose ("so the test plans read clearly"). State only what's real; let a credential or artifact speak plainly ("MFA in Creative Writing") instead of praising it.
-- **Maxims and lecturing.** No general truths about the domain, no "X needs Y," no restating facts about the company to the company, no telling the reader what their systems or role require. Only the user's own facts. Cut windups: "Now I," "Lately," "The thing I would," "the thing that."
+- **Maxims and lecturing.** No general truths about the domain, no "X needs Y," no restating facts about the company to the company, no telling the reader what their systems or role require. Only the user's own facts. Cut windups: "Now I," "Lately," "The thing I would," "the thing that." Cut fronted "What has [verb] me…" pseudo-clefts ("What has kept me in the work is…"): they announce a disposition instead of stating it. Say the fact plainly.
 - **Em-dashes in prose.** Colons, semicolons, parentheses, periods; en-dashes for ranges only. (The résumé's label/value separator is a layout element, not prose, and is exempt.) The literary register uses em-dashes freely; this ban is the job-search register only.
 
 The correction for bad voice is fewer of these plus real examples, never another rule. If the list grows faster than the writing improves, stop and cut.
@@ -116,4 +116,5 @@ Generic tells. A hit stops the render. Keep the list short and high-precision.
 - what pulled me to
 - the thing i would
 - the thing that
+- what has kept me
 - from nothing
