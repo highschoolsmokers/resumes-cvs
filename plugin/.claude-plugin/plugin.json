@@ -1,0 +1,8 @@
+{
+  "name": "job-search",
+  "version": "0.1.0",
+  "description": "Prepare a job application from a listing URL: ingest the listing, tailor the resume, write the cover letter, and merge into a combined PDF.",
+  "author": {
+    "name": "W.S. Gong"
+  }
+}
