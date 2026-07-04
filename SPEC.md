@@ -113,20 +113,20 @@ Never generate the final prose from scratch; never save or render before approva
 
 1. **Opening.** Why the role fits, in a sentence or two. Name the role and company so it is plainly not a form letter. No warm-up.
 2. **Fit.** Map real work to the two or three things the listing asks for: what was done, what happened. Strongest matches only; do not answer every requirement.
-3. **Close (optional).** One short paragraph on how the user works, as plain fact: curiosity, finding defects, fixing the process that let one through. Allowed only when it states settled temperament and looks backward. Looking forward with unrequested work ("the first thing I'd do…") is a plan-close, banned: it reads junior, formulaic, AI-written. A letter may end on the fit paragraph; both are correct.
+3. **Close (optional).** One short paragraph on how the user works, as plain fact. Allowed only when it states a settled temperament and looks backward. A forward-looking plan-close, proposing unrequested work, is banned: it reads junior and formulaic. A letter may instead end on the fit paragraph; both are correct.
 
 **Never** (beyond the voice rules in `profile.md`): quote the company's own words
-(press releases, marketing, mission language); use company news as a hook (facts
-must be durable); open with marketing copy ("what excites me about," "what drew me
-to," "what pulled me to").
+(marketing, mission, press); use time-sensitive company news as a hook, since
+facts must stay durable; open with a marketing-copy warmup. The specific opener
+phrases are enforced literally in `profile.md`.
 
 **Grounding.** Voice from the sample corpus, fit claims from the chosen base,
 company facts from the listing or durable knowledge; the letter works on listing
 detail alone. A letter joins the corpus as a **known-good** only if the user
-approved it at every step. Canonical known-goods: the QA cover letter (ends on the
-fit paragraph), the Pinterest SDET cover letter (disposition close), and the Vercel
-Developer Success cover letter (forward-deployed / customer-success register,
-disposition close ending on a concrete object). Calibrate against all three.
+approved it at every step. Each known-good carries an annotation naming the
+structure it establishes: how it opens, whether it closes on disposition or on
+the fit paragraph, and the register it fits. Calibrate a new letter against the
+known-goods nearest its register, not against a rule list.
 
 The letterhead, length, and forbidden phrases live in `profile.md` and are
 enforced at render (see Implementation).
