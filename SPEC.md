@@ -9,28 +9,19 @@ section 9 is the implementation. Read this before operating.
 
 ## 1. What the system does
 
-Input: one or more job descriptions, plus the user's source material — the master
-résumé, the bases derived from it, a corpus of real cover letters, and
-`profile.md` (goal, positioning, targeting, résumé style, voice, channel).
+Input: job descriptions, plus the user's source material — `master-resume.md`, the
+bases derived from it, the `voice/` letter corpus, and `profile.md`.
 
-Output per JD:
+Output per JD: a résumé tailored from the matching base (§4); a cover letter the
+user writes, the system supplying facts, structure, and a draft; on request, a
+referral message. Nothing invented, nothing auto-submitted (§3).
 
-- a résumé tailored from the matching base (§4);
-- a cover letter the user writes, the system supplying facts, structure, and a draft;
-- on request, a short referral message.
+Truthful limitations are positioned as credentials, not hidden or apologized for:
+a gap, a career change, a non-traditional path, stated plainly (reframes in
+`profile.md`). Success is responses, not documents: tailoring is fast so the user
+applies at volume, and positioning and channel outweigh document polish.
 
-Every claim traces to real material; nothing invented, nothing auto-submitted.
-Success is responses and interviews, not documents produced: tailoring is fast so
-the user applies at volume, and positioning and channel matter more than document
-quality.
-
-The system positions truthful limitations as credentials: an employment gap, a
-career change, or a non-traditional path stated plainly and framed as a strength,
-not hidden or apologized for. The user's limitations and reframings are in
-`profile.md`.
-
-The system also keeps the user's LinkedIn profile in step with the master résumé
-(§8).
+The system also keeps the user's LinkedIn profile in step with the master résumé (§8).
 
 ---
 
@@ -48,13 +39,12 @@ nothing is auto-submitted.
 
 Principles:
 
-- **Plain text until render.** All artifacts stay editable text until the final PDF step.
-- **Grounded, not invented.** Every claim traces to real material; anything unsourced is flagged `[NEEDS SOURCE]`, never fabricated.
-- **Tailor by reuse.** Start from the matching base and tune it to the listing (§4); never rewrite from scratch.
-- **Voice by example.** Calibrate the cover letter on the real letter samples, not on a list of banned phrases.
+- **Plain text until render.** Artifacts stay editable text until the final PDF step.
+- **Grounded, not invented.** Every claim traces to real material; anything unsourced is `[NEEDS SOURCE]`, never fabricated (§3).
+- **Tailor by reuse.** Start from the matching base and tune to the listing (§4); never rewrite from scratch.
+- **Voice by example.** Calibrate the cover letter on the letter samples, not on a list of banned phrases (§7).
 
-One listing at a time, or many in a batch: résumé tailoring runs in parallel, and
-cover letters come out as drafts the user must rewrite.
+Batch or single listing, the same rules hold (§9).
 
 ---
 
@@ -122,11 +112,20 @@ phrases are enforced literally in `profile.md`.
 
 **Grounding.** Voice from the sample corpus, fit claims from the chosen base,
 company facts from the listing or durable knowledge; the letter works on listing
-detail alone. A letter joins the corpus as a **known-good** only if the user
-approved it at every step. Each known-good carries an annotation naming the
-structure it establishes: how it opens, whether it closes on disposition or on
-the fit paragraph, and the register it fits. Calibrate a new letter against the
-known-goods nearest its register, not against a rule list.
+detail alone.
+
+To write a letter: classify its **register** (`profile.md` → Cover-letter
+registers); shortlist that register's known-goods with `voice_index.py --register
+<key>`; calibrate voice and structure on the nearest opener/close variant, and
+against the trained criteria in `RUBRIC.md`.
+
+A letter joins the corpus as a **known-good** only if the user approved it at
+every step; it is saved with frontmatter tagging its register, opener, and close.
+Canonizing is also when the rubric trains: score the new letter against
+`RUBRIC.md`; when it (or a bad example) teaches something the rubric does not yet
+hold, propose the change, get approval, then edit `RUBRIC.md` and commit it — one
+commit per change, naming the sample. A rubric edit is always committed; that
+history is the training log.
 
 The letterhead, length, and forbidden phrases live in `profile.md` and are
 enforced at render (see Implementation).
@@ -160,14 +159,15 @@ resume-devdocs.md         # Dev Docs / DX base (primary)   ┐ generated from th
 resume-education.md       # Developer Education base        │ (render_resume.py --emit-base)
 resume-fde.md             # Forward-Deployed Eng base       ┘
 resume-qa.md              # QA / SDET base (hand-maintained)
-profile.md                # user-specific: goal, positioning, targeting, résumé style, voice
+profile.md                # user-specific: goal, positioning, targeting, résumé style, voice, cover-letter registers
+RUBRIC.md                 # user-specific: trained cover-letter judgment criteria (§7)
 linkedin-profile.md       # generated LinkedIn copy (tracked deliverable)
 linkedin-profile.json     # machine-readable LinkedIn source for the driver (gitignored)
 voice/                    # real letter samples, for voice matching (gitignored)
 applications/             # one folder per job: listing + outputs (gitignored)
 scripts/                  # tooling, grouped by area:
   resume/                 #   build_resume, render_resume, lint_resume
-  letter/                 #   build_cover_letter, voice_lint
+  letter/                 #   build_cover_letter, voice_lint, voice_index
   ingest/                 #   url_ingest, batch_ingest, fetch_metacareers
   pdf/                    #   docx_to_pdf, merge_pdfs
   linkedin/               #   linkedin_export, linkedin_apply, linkedin_selectors, linkedin_browser_probe
@@ -175,6 +175,7 @@ resume-template.docx      # the Swiss/Inter template the engine renders into
 SPEC.md                   # this file
 CLAUDE.md                 # thin session-loaded pointer to this file
 README.md                 # repo front door
+plugin/                   # vendored job-search Cowork plugin (canonical source; installed copy is built from it)
 ```
 
 ### Environment
@@ -200,6 +201,7 @@ Grouped under `scripts/<area>/`; run each by its path.
 **`letter/`**
 - `build_cover_letter.py --input <cover-letter.md> --out <docx>` — enforces the Letterhead, Length, and Forbidden phrases from `profile.md`; aborts on `[NEEDS SOURCE]`. Run via `.venv/bin/python`.
 - `voice_lint.py <letter.md>` — cover-letter voice linter (checks the Forbidden phrases).
+- `voice_index.py --register <key> | --list | --lint` — route a letter to its calibration samples from `voice/` frontmatter; validate the tags against `profile.md`'s register set. System `python3`.
 
 **`ingest/`**
 - `url_ingest.py <URL> --no-commit` — detect source; fetch Greenhouse/Lever/Ashby via ATS JSON APIs; LinkedIn/generic emit a stub `listing.json` flagged `requires_chrome_mcp` / `requires_user_fill`.
@@ -261,7 +263,7 @@ python3 scripts/linkedin/linkedin_apply.py --commit --experience   # applies, co
 
 - **Naming:** lowercase kebab, ISO dates — `senior-dx-engineer-2026-07-01/`.
 - **Branches:** `main` is always submittable. Feature work on a branch; fast-forward and push when done. Never force-push `main`.
-- **Commits:** `<area>: <verb> <object>`, one logical change each; end messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. Commit only when asked.
+- **Commits:** `<area>: <verb> <object>`, one logical change each; end messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. Commit only when asked — except `RUBRIC.md`, whose every edit is committed as part of the change that made it (§7).
 - **Git identity:** local to this repo (no `--global`), `W.S. Gong <billygong@me.com>`.
 - **Gitignore:** `applications/*`, `voice/`, `.venv/`, `.DS_Store`, `linkedin-profile.json`, and the LinkedIn session artifacts (`.linkedin-chrome-profile/` holds cookies — treat as a credential; `linkedin-runs/`). To track something under an ignored path, refactor the path; do not add an exception.
 - **Shell:** zsh-friendly commands only.
