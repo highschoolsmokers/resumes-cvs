@@ -9,8 +9,7 @@ this file is the user. Swap it to run the system for a different job search.
 Land a developer-documentation or developer-experience role at an AI or dev-tools
 company; **≥ $120k**; remote, SF, or hybrid. Secondary: QA/SDET at an AI company.
 
-Success is responses and interviews, not documents produced. What blocks it:
-scattered positioning and cold applications that convert near 1–2%.
+What blocks it: scattered positioning, and reliance on cold applications (see Channel).
 
 ## Identity
 
@@ -42,6 +41,24 @@ One base résumé per family; send the matching one per application.
 | QA / SDET | `resume-qa.md` | QA / SDET / test engineering at AI or dev-tools companies |
 
 Dev Docs, Education, and FDE are generated from `master-resume.md` (a summary swap over the shared body); regenerate them when the master changes. QA is hand-maintained: it reorders the body QA-first and reframes the AI work as quality engineering.
+
+## Cover-letter registers
+
+Closed set. Each letter is classified into one register; its calibration samples are the known-goods tagged with that register, routed via `voice_index.py --register <key>`. A register may split a résumé family when the letter's shape differs by audience. Mechanism: SPEC §7.
+
+| Register | Applies to | Typical base |
+|----------|-----------|--------------|
+| `qa-sdet` | QA / SDET / test-engineering | `resume-qa.md` |
+| `fde-customer-success` | forward-deployed, external customers | `resume-fde.md` |
+| `fde-internal-tooling` | build-for-non-technical internal users | `resume-fde.md` |
+| `docs-dx` | docs / DX / technical writer | `resume-devdocs.md` |
+| `dev-education` | developer educator / advocate *(reserved)* | `resume-education.md` |
+| `personal-literary` | warm, non-job letters *(excluded from routing)* | — |
+
+Structural variants within a register are disambiguated by two sample tags:
+
+- **opener:** `i-am` · `over-25-years` · `both-halves`
+- **close:** `ends-on-fit` · `disposition` · `disposition-object`
 
 ## Channel
 
