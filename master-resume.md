@@ -105,6 +105,8 @@ GoPro · 2012–2015 · San Mateo, CA
 
 - **AI & agents:** Anthropic SDK (Claude), MCP servers, Claude Code plugins, tool-use loops, multi-agent orchestration, prompt engineering
 - **Documentation:** API references, developer guides, SDK tutorials, quickstarts, docs-as-code (Markdown, Vale, Git), OpenAPI/Swagger, JSON Schema
+- **Editing:** copyediting, proofreading, Chicago Manual of Style, AP style, editorial style guides
+- **Web publishing:** WordPress, Sanity.io, Contentful, Ghost, Squarespace, Drupal, static site generators, HTML, SEO fundamentals, Confluence
 - **Languages:** Python, TypeScript/JavaScript, Node.js, Ruby, React/Next.js
 - **Testing & CI:** Playwright, Cypress, Pytest/Jest, JMeter, CI/CD (GitHub Actions, Circle CI)
 - **Platforms:** Vercel, Neon Postgres, Docker, Git
@@ -115,6 +117,6 @@ GoPro · 2012–2015 · San Mateo, CA
 
 - **MFA, Creative Writing (Fiction), with distinction** · San Francisco State University · 2021–2024. Faculty Lecturer; coursework in technical editing and writing.
 - **BA, Philosophy and English** · University of California, Santa Barbara · 1995
-- **Certificate in Professional Editing** · UC Berkeley Extension · 2023
+- **Certificate in Professional Editing** · UC Berkeley Extension · 2023. Copyediting and proofreading to Chicago Manual of Style and AP style.
 
 **Writing:** Short fiction published in *Fourteen Hills*; alumni of Bread Loaf, Sewanee, Tin House, Kenyon, VONA, VCCA.

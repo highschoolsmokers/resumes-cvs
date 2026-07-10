@@ -27,7 +27,7 @@ One primary identity, stated the same way everywhere:
 
 ## Targeting
 
-Titles: technical writer, docs/DX engineer, developer educator or advocate (docs-leaning), content engineer. Secondary: QA/SDET at AI or dev-tools companies, especially testing non-deterministic or LLM systems. Companies: AI labs and products, SDK/API/dev-tools, any company shipping a developer platform. Filters: comp ≥ $120k; remote-US or Bay Area; exclude influencer-DevRel roles with no writing or engineering substance. Out of scope: pure staff-SWE roles, dated QA-only roles with no AI angle, non-technical editorial.
+Titles: technical writer, docs/DX engineer, developer educator or advocate (docs-leaning), content engineer. Secondary: QA/SDET at AI or dev-tools companies, especially testing non-deterministic or LLM systems; editorial standards / copy editor / house-style writer-editor at an AI, tech, or media company (where the writing/editing credentials are the core fit, not a stretch). Companies: AI labs and products, SDK/API/dev-tools, any company shipping a developer platform. Filters: comp ≥ $120k; remote-US or Bay Area; exclude influencer-DevRel roles with no writing or engineering substance. Out of scope: pure staff-SWE roles, dated QA-only roles with no AI angle, non-technical editorial.
 
 ## Target families & bases
 
@@ -39,8 +39,9 @@ One base résumé per family; send the matching one per application.
 | Developer Education | `resume-education.md` | developer educator or advocate, teaching, curriculum, tutorials |
 | Forward-Deployed Engineering | `resume-fde.md` | forward-deployed, solutions, full-stack-with-customers |
 | QA / SDET | `resume-qa.md` | QA / SDET / test engineering at AI or dev-tools companies |
+| Editorial / Standards | `resume-editorial.md` | editorial standards, copyediting, house-style and brand writing/editing at a tech or media company |
 
-Dev Docs, Education, and FDE are generated from `master-resume.md` (a summary swap over the shared body); regenerate them when the master changes. QA is hand-maintained: it reorders the body QA-first and reframes the AI work as quality engineering.
+Dev Docs, Education, and FDE are generated from `master-resume.md` (a summary swap over the shared body); regenerate them when the master changes. QA and Editorial are hand-maintained: QA reorders the body QA-first and reframes the AI work as quality engineering; Editorial reorders editorial-first (The Rumpus, the SFSU journal, the editing certificate) and surfaces the editing and web-publishing skills, with the Slack docs and Anthropic-stack tooling as proof of writing accessibly about technical work. Editorial is the one family that leads with the writing/editing identity: the "no editorial stretch" rule bars forcing that background onto technical/AI roles, not onto genuinely editorial ones.
 
 ## Cover-letter registers
 
@@ -52,6 +53,7 @@ Closed set. Each letter is classified into one register; its calibration samples
 | `fde-customer-success` | forward-deployed, external customers | `resume-fde.md` |
 | `fde-internal-tooling` | build-for-non-technical internal users | `resume-fde.md` |
 | `docs-dx` | docs / DX / technical writer | `resume-devdocs.md` |
+| `editorial` | editorial standards / copyediting / house-style and brand writing | `resume-editorial.md` |
 | `dev-education` | developer educator / advocate *(reserved)* | `resume-education.md` |
 | `personal-literary` | warm, non-job letters *(excluded from routing)* | — |
 

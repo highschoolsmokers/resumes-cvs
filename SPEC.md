@@ -159,6 +159,7 @@ resume-devdocs.md         # Dev Docs / DX base (primary)   ┐ generated from th
 resume-education.md       # Developer Education base        │ (render_resume.py --emit-base)
 resume-fde.md             # Forward-Deployed Eng base       ┘
 resume-qa.md              # QA / SDET base (hand-maintained)
+resume-editorial.md       # Editorial / Standards base (hand-maintained)
 profile.md                # user-specific: goal, positioning, targeting, résumé style, voice, cover-letter registers
 RUBRIC.md                 # user-specific: trained cover-letter judgment criteria (§7)
 linkedin-profile.md       # generated LinkedIn copy (tracked deliverable)
