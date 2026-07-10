@@ -85,10 +85,11 @@ Forbidden: a second type family; mixed-weight inline headers; the accent anywher
 
 ## Voice
 
-Rules for any prose written as the user: résumé lines, cover letters, referral messages. Plain, declarative, past tense for finished work. Concrete nouns over adjectives, one idea per sentence. State the fact and stop; cut anything that exists for rhythm or effect.
+Rules for any prose written as the user: résumé lines, cover letters, referral messages. Plain, declarative, active voice, past tense for finished work. Concrete nouns over adjectives, one idea per sentence. State the fact and stop; cut anything that exists for rhythm or effect.
 
 Never:
 
+- **Passive constructions.** Active voice: the actor does the thing. "I built the tool," "the software gets used" — not "the tool was built," "the software is used." Passive only when the actor is genuinely unknown or beside the point (a credential where the work is the subject: "my fiction has been published in…").
 - **Decoration instead of fact.** Fog verbs ("working on," "leveraging," "passionate about"), aphoristic language ("Docs-as-tests catches drift before users do"), "X in; Y out" pipeline phrasing. Replace with the concrete tool, mechanism, or result.
 - **Claims that aren't demonstrable.** Skills listed but not actually used; superlatives without proof; grading one's own prose ("so the test plans read clearly"). State only what's real; let a credential or artifact speak plainly ("MFA in Creative Writing") instead of praising it.
 - **Maxims and lecturing.** No general truths about the domain, no "X needs Y," no restating facts about the company to the company, no telling the reader what their systems or role require. Only the user's own facts. Cut windups: "Now I," "Lately," "The thing I would," "the thing that." Cut fronted "What…" pseudo-clefts, whether about him ("What has kept me in the work is…") or about his work ("What I built at Fabulosa is…", "What I have built gets used…"): they announce the fact instead of stating it. Say it plainly ("The software I built at Fabulosa gets used…").
@@ -96,7 +97,7 @@ Never:
 
 The correction for bad voice is fewer of these plus real examples, never another rule. If the list grows faster than the writing improves, stop and cut.
 
-**Cover-letter sound.** Restrained and understated; the samples under-sell. Specific throughout: name the actual journals, bookstores, platforms, tools. Omit the warm openings and closings of the personal register: no thank-you openings, no gush, no apology closes. First person (the résumé is third-person), past tense for finished work.
+**Cover-letter sound.** Restrained and understated; the samples under-sell. Specific throughout: name the actual journals, bookstores, platforms, tools. Omit the warm openings and closings of the personal register: no thank-you openings, no gush, no apology closes. First person (the résumé is third-person), past tense for finished work. Active voice throughout: every sentence has the user doing the thing, with no passive or reduced-passive participles (write "MCP servers I ship in the open", not "MCP servers shipped in the open"). The credential exception in Voice above does not apply to job letters.
 
 The Letterhead, Length, and Forbidden phrases below are machine-parsed at render (see SPEC Implementation).
 
