@@ -46,6 +46,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import fetch_recipes  # same dir — domain → fetch-recipe registry
+
 
 REPO = Path(__file__).resolve().parents[2]
 APPLICATIONS = REPO / "applications"
@@ -378,6 +380,15 @@ def main() -> int:
         sys.stderr.write("url_ingest.py: title unknown — rerun with "
                          "--title <Role>\n")
 
+    # For any stub (no structured JSON route), attach the fetch recipe for this
+    # domain so the agent goes straight to the working method instead of
+    # rediscovering it by trial. ATS listings arrive complete and need none.
+    stub = listing.get("requires_user_fill") or listing.get("requires_chrome_mcp")
+    recipe = known = None
+    if stub and args.url:
+        recipe, known = fetch_recipes.resolve(args.url)
+        listing["fetch_recipe"] = {**recipe, "known": known}
+
     folder = write_application(listing)
     branch = branch_name(folder)
     rel = folder.relative_to(REPO)
@@ -426,6 +437,16 @@ def main() -> int:
         print()
         print("  NOTE: this generic listing is a stub. Open listing.md and "
               "paste the JD body, then clear `requires_user_fill` in listing.json.")
+
+    if recipe is not None:
+        print()
+        print("  FETCH RECIPE (go straight to this — skip the trial GETs):")
+        for line in fetch_recipes.render(recipe, args.url, known=known).splitlines():
+            print("  " + line)
+        if not known:
+            print("  Once you find the route that works, train the index:")
+            print(f"    python3 scripts/ingest/fetch_recipes.py record "
+                  f"--domain {fetch_recipes.hostname(args.url)} --method <m> --note \"...\"")
     return 0
 
 

@@ -47,9 +47,19 @@ This writes `applications/<Company>/<role-slug>-<YYYY-MM-DD>/listing.json` +
 
 - `requires_chrome_mcp: true` (LinkedIn) — fetch the JD body with the browser
   tools, then fill the real fields into `listing.md` / `listing.json` and clear
-  the flag. (For a JS-rendered Meta careers URL, use `scripts/ingest/fetch_metacareers.py <URL>` instead.)
-- `requires_user_fill: true` (generic URL, no adapter matched) — ask the user to
-  paste the JD body, write it into `listing.md`, and clear the flag.
+  the flag.
+- `requires_user_fill: true` (generic URL, no adapter matched) — the stub carries
+  a **`fetch_recipe`** block, and `url_ingest` prints it. It is the domain's
+  known-working fetch method (`scripts/ingest/fetch_recipes.json`) — **go straight
+  to it; skip the trial GETs.** Meta → run `fetch_metacareers.py`; amazon.jobs →
+  curl the HTML with a browser UA and extract per the recipe; unknown domain →
+  the recipe defaults to the reader-proxy-first rule. Fill `listing.md` and clear
+  the flag. If the domain was unknown and you found a route that works, **train
+  the index** so the next listing skips the tests:
+  ```bash
+  python3 scripts/ingest/fetch_recipes.py record --domain <host> --method <m> --note "…" [--command "… '{url}'"] [--extract "…"]
+  ```
+  (`python3 scripts/ingest/fetch_recipes.py <URL>` prints the recipe for any URL.)
 - Otherwise (Greenhouse / Lever / Ashby fetched via ATS JSON) proceed.
 
 Commit only when the user asks (CLAUDE.md); surface the printed git commands so

@@ -205,9 +205,10 @@ Grouped under `scripts/<area>/`; run each by its path.
 - `voice_index.py --register <key> | --list | --lint` — route a letter to its calibration samples from `voice/` frontmatter; validate the tags against `profile.md`'s register set. System `python3`.
 
 **`ingest/`**
-- `url_ingest.py <URL> --no-commit` — detect source; fetch Greenhouse/Lever/Ashby via ATS JSON APIs; LinkedIn/generic emit a stub `listing.json` flagged `requires_chrome_mcp` / `requires_user_fill`.
-- `batch_ingest.py <URL…>` — ingest a list; print a JSON manifest (folder, company, title, source, stub flags).
-- `fetch_metacareers.py <URL>` — fetch a JS-rendered Meta careers JD via the Jina reader proxy into the listing schema.
+- `url_ingest.py <URL> --no-commit` — detect source; fetch Greenhouse/Lever/Ashby via ATS JSON APIs; LinkedIn/generic emit a stub `listing.json` flagged `requires_chrome_mcp` / `requires_user_fill`. Every stub carries a `fetch_recipe` block (from the registry below) and the printed next-steps name the working method.
+- `fetch_recipes.py` / `fetch_recipes.json` — **domain → fetch-recipe registry ("training fetches").** Keyed by hostname suffix; each recipe records the method that works for a JS-rendered / bot-walled site (`ats_json` / `json_endpoint` / `dedicated_script` / `curl_browser_ua` / `reader_proxy` / `chrome_mcp` / `user_fill`) plus the exact command and extraction hints, so the *next* listing from that domain skips the trial GETs. `fetch_recipes.py <URL>` prints the recipe (exit 3 = unknown domain, falls back to the proxy-first default); `fetch_recipes.py record --domain … --method … --note …` trains a newly-solved domain; `--list` dumps all. `url_ingest` and `batch_ingest` consult it automatically for stubs.
+- `batch_ingest.py <URL…>` — ingest a list; print a JSON manifest (folder, company, title, source, stub flags, `fetch_recipe`).
+- `fetch_metacareers.py <URL>` — fetch a JS-rendered Meta careers JD via the Jina reader proxy into the listing schema (the `metacareers.com` recipe points here).
 
 **`pdf/`**
 - `docx_to_pdf.py <docx…>` — convert many docx to PDF in one LibreOffice pass (a private profile per run; never run two soffice at once).

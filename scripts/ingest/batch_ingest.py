@@ -32,7 +32,7 @@ def ingest_one(url: str) -> dict:
     entry: dict = {
         "url": url, "folder": None, "company": None, "title": None,
         "source": None, "requires_chrome_mcp": False,
-        "requires_user_fill": False, "error": None,
+        "requires_user_fill": False, "fetch_recipe": None, "error": None,
     }
     try:
         source, ids = ing.detect_source(url)
@@ -51,6 +51,15 @@ def ingest_one(url: str) -> dict:
         entry["error"] = f"{type(e).__name__}: {e}"
         listing = ing.stub_generic(url)
         listing["requires_user_fill"] = True
+
+    # Stubs (no structured JSON route) carry the domain's fetch recipe so the
+    # orchestrator sends each one straight to the working method.
+    if listing.get("requires_user_fill") or listing.get("requires_chrome_mcp"):
+        recipe, known = ing.fetch_recipes.resolve(url)
+        listing["fetch_recipe"] = {**recipe, "known": known}
+        entry["fetch_recipe"] = {"method": recipe.get("method"),
+                                 "known": known,
+                                 "command": recipe.get("command")}
 
     folder = ing.write_application(listing)
     entry["folder"] = str(folder)

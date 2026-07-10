@@ -1,0 +1,99 @@
+{
+  "_schema": {
+    "keyed_by": "domain suffix (a URL matches the longest registered suffix of its hostname)",
+    "method": "one of: ats_json | json_endpoint | dedicated_script | curl_browser_ua | reader_proxy | chrome_mcp | user_fill",
+    "fields": {
+      "domain": "hostname suffix this recipe matches (e.g. 'amazon.jobs' matches www.amazon.jobs)",
+      "method": "the fetch method that works — go straight to it, skip the trial GETs",
+      "note": "what makes this domain special / why the obvious routes fail",
+      "command": "optional exact shell command; '{url}' is substituted with the listing URL",
+      "extract": "optional hints for pulling the JD body/quals/comp out of the fetched bytes",
+      "verified_at": "YYYY-MM-DD the recipe last worked",
+      "source_memory": "optional related memory slug for the long-form writeup"
+    }
+  },
+  "recipes": [
+    {
+      "domain": "boards.greenhouse.io",
+      "method": "ats_json",
+      "note": "Handled natively by url_ingest.py — public board API, no browser.",
+      "verified_at": "2026-07-01"
+    },
+    {
+      "domain": "job-boards.greenhouse.io",
+      "method": "ats_json",
+      "note": "Handled natively by url_ingest.py — public board API, no browser.",
+      "verified_at": "2026-07-01"
+    },
+    {
+      "domain": "jobs.lever.co",
+      "method": "ats_json",
+      "note": "Handled natively by url_ingest.py — Lever postings API, no browser.",
+      "verified_at": "2026-07-01"
+    },
+    {
+      "domain": "jobs.ashbyhq.com",
+      "method": "ats_json",
+      "note": "Handled natively by url_ingest.py — Ashby posting-api board, no browser.",
+      "verified_at": "2026-07-01"
+    },
+    {
+      "domain": "linkedin.com",
+      "method": "chrome_mcp",
+      "note": "Login/bot wall on plain HTTP. url_ingest emits a requires_chrome_mcp stub; finish the JD body with the browser tools, then clear the flag.",
+      "verified_at": "2026-07-01"
+    },
+    {
+      "domain": "metacareers.com",
+      "method": "dedicated_script",
+      "note": "JS-rendered; hard-blocks non-browser HTTP. A dedicated fetcher renders via the Jina reader proxy and writes the listing schema directly.",
+      "command": "python3 scripts/ingest/fetch_metacareers.py '{url}'",
+      "verified_at": "2026-07-01",
+      "source_memory": "reference_fetch_metacareers_script"
+    },
+    {
+      "domain": "myworkdayjobs.com",
+      "method": "json_endpoint",
+      "note": "Any Workday tenant (e.g. salesforce.wd12.myworkdayjobs.com). Don't scrape the HTML — hit the Workday CXS JSON endpoint, which returns structured title / jobDescription (HTML) / location / posted / comp. Confirmed on the Salesforce Commerce Cloud tech-writer listing (2026-07-03).",
+      "command": "curl -s 'https://<tenant>.<dc>.myworkdayjobs.com/wday/cxs/<tenant>/<site>/job/<job-path>'  # from the listing URL: <tenant>=first host label, <site>=first path segment, <job-path>=everything after '/job/'; drop the query string",
+      "extract": "Response JSON: jobPostingInfo.title, .jobDescription (HTML → strip tags), .location, .startDate/.postedOn, .jobRequisitionId. Comp is often inline in jobDescription rather than a structured field.",
+      "verified_at": "2026-07-03"
+    },
+    {
+      "domain": "amazon.jobs",
+      "method": "curl_browser_ua",
+      "note": "JS-rendered + bot-walled. The reader proxy returns only a tracker probe and the /jobs/<id>.json endpoint 406s — do NOT reach for either. Plain curl of the HTML page with a browser UA returns 200 with the JD embedded.",
+      "command": "curl -sL -H \"User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36\" '{url}' -o amz.html",
+      "extract": "og:description meta tag = clean intro paragraphs. Search the HTML case-insensitively for 'basic qualifications' (lowercase in source); strip tags (<[^>]+> -> space, html.unescape, collapse whitespace). Description + 'Key job responsibilities' sit just above it; 'Preferred Qualifications' just below. Base-salary ranges are inline near the string 'USD annually'. Then hand-fill listing.md/listing.json and clear requires_user_fill.",
+      "verified_at": "2026-07-01",
+      "source_memory": "reference_amazon_jobs_jd_fetch"
+    },
+    {
+      "domain": "careers.adobe.com",
+      "method": "reader_proxy",
+      "note": "Phenom-hosted careers site (JD fetched 2026-07-04); applications themselves route through Workday. Exact fetch route not codified — treat proxy-first as the default and re-verify on next encounter. Phenom sites often expose a JSON widget API worth probing before the proxy.",
+      "command": "curl -sL 'https://r.jina.ai/{url}'",
+      "verified_at": "2026-07-04"
+    },
+    {
+      "domain": "jobs.twilio.com",
+      "method": "reader_proxy",
+      "note": "Solved once via a browser proxy (2026-07-01); no ATS JSON route captured. Proxy-first; re-verify and record the exact route if it comes up again.",
+      "command": "curl -sL 'https://r.jina.ai/{url}'",
+      "verified_at": "2026-07-01"
+    },
+    {
+      "domain": "ats.rippling.com",
+      "method": "reader_proxy",
+      "note": "Solved once via a browser proxy (2026-07-01); no ATS JSON route captured. Proxy-first; re-verify and record the exact route if it comes up again.",
+      "command": "curl -sL 'https://r.jina.ai/{url}'",
+      "verified_at": "2026-07-01"
+    },
+    {
+      "domain": "jackandjill.ai",
+      "method": "user_fill",
+      "note": "Aggregator/mirror, not a primary source. Don't ingest the aggregator page — follow it to the canonical posting (usually a Greenhouse/Lever/Ashby URL) and ingest THAT for structured data. Fall back to a pasted JD only if there's no underlying ATS link.",
+      "verified_at": "2026-07-04"
+    }
+  ]
+}
