@@ -94,6 +94,12 @@
       "method": "user_fill",
       "note": "Aggregator/mirror, not a primary source. Don't ingest the aggregator page — follow it to the canonical posting (usually a Greenhouse/Lever/Ashby URL) and ingest THAT for structured data. Fall back to a pasted JD only if there's no underlying ATS link.",
       "verified_at": "2026-07-04"
+    },
+    {
+      "domain": "asana.com",
+      "method": "reader_proxy",
+      "note": "asana.com/jobs/apply/<id> is JS-rendered; reader proxy (https://r.jina.ai/<url>) returns full JD markdown on first try. Title/qualifications/comp all present.",
+      "verified_at": "2026-07-10"
     }
   ]
 }
