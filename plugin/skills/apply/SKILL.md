@@ -24,7 +24,7 @@ Read these first — they are the source of truth for the system:
 - `profile.md` — goal, positioning, targeting, target families & bases, résumé style, voice, letterhead, length, forbidden phrases.
 - `master-resume.md` and the matching base (`resume-devdocs.md`, `resume-education.md`, `resume-fde.md`, `resume-qa.md`).
 - `voice/` — real cover-letter samples, tagged with register/opener/close frontmatter; routed by `scripts/letter/voice_index.py`.
-- `RUBRIC.md` — trained cover-letter judgment criteria (SPEC.md §7).
+- `SPEC.md` §7 **Trained criteria** — the cover-letter judgment layer.
 
 If `SPEC.md` or `profile.md` is missing, stop and tell the user — the repo isn't
 set up for this workflow.
@@ -93,10 +93,10 @@ The flow:
    happened), optional disposition close (settled temperament, backward-looking
    only; never a "first thing I'd do" plan-close).
 3. Iterate until the user approves the words. Calibrate on the register's
-   known-goods and the trained rubric: classify the register (`profile.md` →
+   known-goods and the trained criteria: classify the register (`profile.md` →
    **Cover-letter registers**), run `python3 scripts/letter/voice_index.py
-   --register <key>` for the shortlist, and check the draft against `RUBRIC.md`
-   (SPEC.md §7).
+   --register <key>` for the shortlist, and check the draft against the
+   **Trained criteria** in `SPEC.md` §7.
 4. **Only after approval**, write `<folder>/cover-letter.md`, then build + lint:
 
 ```bash
@@ -135,11 +135,12 @@ commit (`<area>: <verb> <object>`, ending with the Co-Authored-By line — SPEC.
 
 When the user approves a letter **and** asks to add it to the corpus: save it to
 `voice/<slug>.md` with frontmatter (`register`, `opener`, `close`, `establishes`,
-`approved`) plus the prose annotation. Then train the rubric — score the letter
-against `RUBRIC.md`; if it (or a bad example) teaches something the rubric does not
-yet hold, propose the change, get approval, edit `RUBRIC.md`, and commit it:
-`rubric: <change> (from <sample-id>)`. A rubric edit is always committed (SPEC.md
-§7). Run `python3 scripts/letter/voice_index.py --lint` to confirm the new tags.
+`approved`) plus the prose annotation. Then train the criteria — score the letter
+against the **Trained criteria** in `SPEC.md` §7; if it (or a bad example) teaches
+something they do not yet hold, propose the change, get approval, edit that
+section, and commit it: `rubric: <change> (from <sample-id>)`. A criteria edit is
+always committed. Run `python3 scripts/letter/voice_index.py --lint` to confirm
+the new tags.
 
 ## What this skill does NOT do
 

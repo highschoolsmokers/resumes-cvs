@@ -10,7 +10,7 @@ what shape does each take?" — so routing is deterministic instead of a
 read-every-file guess.
 
 It is the routing half of the cover-letter system; the *judgment* half is
-`RUBRIC.md` (the trained criteria) and the *mechanical* half is
+the Trained criteria in `SPEC.md` §7 and the *mechanical* half is
 `voice_lint.py` (the forbidden-phrase gate).
 
 Frontmatter contract (top of each `voice/*.md`, before the prose annotation):
