@@ -117,18 +117,46 @@ detail alone.
 To write a letter: classify its **register** (`profile.md` → Cover-letter
 registers); shortlist that register's known-goods with `voice_index.py --register
 <key>`; calibrate voice and structure on the nearest opener/close variant, and
-against the trained criteria in `RUBRIC.md`.
+against the **Trained criteria** below.
 
 A letter joins the corpus as a **known-good** only if the user approved it at
 every step; it is saved with frontmatter tagging its register, opener, and close.
-Canonizing is also when the rubric trains: score the new letter against
-`RUBRIC.md`; when it (or a bad example) teaches something the rubric does not yet
-hold, propose the change, get approval, then edit `RUBRIC.md` and commit it — one
-commit per change, naming the sample. A rubric edit is always committed; that
-history is the training log.
+Canonizing is also when the criteria train: score the new letter against the
+Trained criteria; when it (or a bad example) teaches something they do not yet
+hold, propose the change, get approval, then edit them below and commit it — one
+commit per change, naming the sample. A criteria edit is always committed; that
+commit history is the training log.
 
 The letterhead, length, and forbidden phrases live in `profile.md` and are
 enforced at render (see Implementation).
+
+### Trained criteria
+
+The judgment layer between `profile.md`'s hard rules (mechanically enforced by
+`voice_lint.py`) and the raw `voice/` samples (routed by `voice_index.py`). Each
+criterion cites the sample that trained it. User-approved; every change is one
+commit naming its source example (`rubric: <change> (from <sample-id>)`).
+
+**Global — every letter**
+- Strongest matches only. Map the two or three real overlaps; let honest gaps stand rather than paper over them. [everlaw]
+- The opener earns its place: state what the candidate is and the strongest proof, or the two spans that make the fit — never a thesis or warm-up. [adobe, vercel]
+- Offer no claim the candidate can't stand behind: a dated, past-tense-only skill is left out, not implied current, against a current-proficiency ask. [adobe]
+- Every clause is a fact; nothing explains its own relevance to the reader.
+- Fit maps real work to the listing's actual asks, in the candidate's words.
+
+**Per register**
+- **qa-sdet** — opener leads with the QA span, or fuses QA + AI-verification (both-halves) for AI-augmented roles; close is ends-on-fit or a disposition about how things break / test-signal quality. [qa, pinterest, adobe]
+- **fde-customer-success / fde-internal-tooling** — "I am a…" opener leading with production work on the target stack; disposition close ending on a concrete object. [vercel, everlaw]
+- **docs-dx** — opener leads with the docs identity and the Slack docs; fit names the doc artifacts plus the Anthropic-stack tools. [dev-docs, salesforce]
+- **dev-education** — Developer Advocate/educator calibrated on docs-dx: docs-identity opener plus the Slack platform docs; fit maps the advocacy asks (own the docs, guide the community through API changes) to the Slack docs, DevRel partnering, and published open-source work; let the events/hackathon and social-channel DevRel gap stand, never claim it. [notion-developer-advocate]
+
+**Anti-patterns** (shapes; `profile.md` enforces the exact phrases)
+- Plan-close — forward-looking unrequested work ("the first thing I'd do…").
+- Fronted "What has [verb] me…" pseudo-cleft — announces a disposition instead of stating it. [retired 2026-07-03]
+- Windups ("Now I", "Lately"); marketing-copy openers ("what excites me about").
+
+Prune as it trains: merge a covered criterion, cut one that never fires (also a
+commit). Keep it shorter than the corpus it generalizes.
 
 ---
 
@@ -161,7 +189,6 @@ resume-fde.md             # Forward-Deployed Eng base       ┘
 resume-qa.md              # QA / SDET base (hand-maintained)
 resume-editorial.md       # Editorial / Standards base (hand-maintained)
 profile.md                # user-specific: goal, positioning, targeting, résumé style, voice, cover-letter registers
-RUBRIC.md                 # user-specific: trained cover-letter judgment criteria (§7)
 linkedin-profile.md       # generated LinkedIn copy (tracked deliverable)
 linkedin-profile.json     # machine-readable LinkedIn source for the driver (gitignored)
 voice/                    # real letter samples, for voice matching (gitignored)
@@ -265,7 +292,7 @@ python3 scripts/linkedin/linkedin_apply.py --commit --experience   # applies, co
 
 - **Naming:** lowercase kebab, ISO dates — `senior-dx-engineer-2026-07-01/`.
 - **Branches:** `main` is always submittable. Feature work on a branch; fast-forward and push when done. Never force-push `main`.
-- **Commits:** `<area>: <verb> <object>`, one logical change each; end messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. Commit only when asked — except `RUBRIC.md`, whose every edit is committed as part of the change that made it (§7).
+- **Commits:** `<area>: <verb> <object>`, one logical change each; end messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. Commit only when asked — except a §7 Trained-criteria edit, which is committed as part of the change that made it (`rubric: <change> (from <sample-id>)`).
 - **Git identity:** local to this repo (no `--global`), `W.S. Gong <billygong@me.com>`.
 - **Gitignore:** `applications/*`, `voice/`, `.venv/`, `.DS_Store`, `linkedin-profile.json`, and the LinkedIn session artifacts (`.linkedin-chrome-profile/` holds cookies — treat as a credential; `linkedin-runs/`). To track something under an ignored path, refactor the path; do not add an exception.
 - **Shell:** zsh-friendly commands only.

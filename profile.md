@@ -54,7 +54,7 @@ Closed set. Each letter is classified into one register; its calibration samples
 | `fde-internal-tooling` | build-for-non-technical internal users | `resume-fde.md` |
 | `docs-dx` | docs / DX / technical writer | `resume-devdocs.md` |
 | `editorial` | editorial standards / copyediting / house-style and brand writing | `resume-editorial.md` |
-| `dev-education` | developer educator / advocate *(reserved)* | `resume-education.md` |
+| `dev-education` | developer educator / advocate | `resume-education.md` |
 | `personal-literary` | warm, non-job letters *(excluded from routing)* | — |
 
 Structural variants within a register are disambiguated by two sample tags:
